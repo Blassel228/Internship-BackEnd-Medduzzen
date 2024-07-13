@@ -1,10 +1,10 @@
 version: '3.8'
 
 services:
-  web:
+  uvicorn:
     build:
       context: .
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     volumes:
@@ -12,3 +12,22 @@ services:
     environment:
       - UVICORN_HOST=0.0.0.0
       - UVICORN_PORT=8000
+
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+
+  db:
+    image: "postgres:13"
+    environment:
+      POSTGRES_DB: postgreSQL
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: kokdvNNNDFsds23m1k
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

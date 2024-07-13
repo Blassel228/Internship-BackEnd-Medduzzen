@@ -3,3 +3,5 @@ fastapi
 pydantic_settings
 docker
 pytest
+sqlalchemy
+redis
