@@ -5,3 +5,7 @@ docker
 pytest
 sqlalchemy
 redis
+alembic
+pydantic
+psycopg2
+asyncpg
