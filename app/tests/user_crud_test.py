@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi import HTTPException
 from app.utils.deps import pwd_context
 
-
 @pytest.fixture
 def user_crud():
     return UserCrud(UserModel)
@@ -151,12 +150,12 @@ async def test_user_update_not_found(mock_logger, mock_get_one, mock_update, use
     user_update_schema = UserUpdateInSchema(**user_data)
 
     async for db_session in get_db_fixture:
-        mock_update.return_value = None  # Simulate user not found during update
-        mock_get_one.return_value = None  # Simulate user not found during retrieval
+        mock_update.return_value = None
+        mock_get_one.return_value = None
 
         with pytest.raises(HTTPException) as exc_info:
             await user_crud.user_update(id_=1, data=user_update_schema, db=db_session)
 
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == "User is not valid"
-        mock_logger.error.assert_not_called()  # Ensure no errors were logged
+        mock_logger.error.assert_not_called()
