@@ -9,3 +9,5 @@ alembic
 pydantic
 psycopg2
 asyncpg
+passlib
+bcrypt
