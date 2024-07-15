@@ -17,7 +17,7 @@ session = async_sessionmaker(engine, expire_on_commit=False)
 class UserModel(Base):
     __tablename__ = "user"
     id = Column(Integer, primary_key=True)
-    username = Column(String, nullable=False)
+    username = Column(String, nullable=False, unique=True)
     hashed_password = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
     registration_date = Column(DateTime, default=datetime.now())

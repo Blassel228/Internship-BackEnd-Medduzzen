@@ -15,6 +15,13 @@ class Settings(BaseSettings):
     redis_port: int
     redis_pass: str
 
+    algorithm: str
+    secret: str
+
+    domain: str
+    api_audience: str
+    issuer: str
+
     model_config = SettingsConfigDict(env_file=dotenv.find_dotenv(), extra = "allow")
 
 settings = Settings()

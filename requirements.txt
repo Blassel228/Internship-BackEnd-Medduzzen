@@ -11,3 +11,13 @@ psycopg2
 asyncpg
 passlib
 bcrypt
+python-jose
+asgiref
+cffi
+click
+cryptography
+h11
+pycparser
+PyJWT
+starlette
+typing-extensions
