@@ -10,7 +10,6 @@ from app.db.models import UserModel, session
 from config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token/token/")
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def get_db():

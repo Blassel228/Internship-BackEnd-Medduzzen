@@ -1,23 +1,21 @@
 from datetime import timedelta, datetime
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Annotated
-from fastapi import status
+from fastapi import status, Response
 from passlib.context import CryptContext
 from app.db.models import UserModel
 from app.utils.deps import get_db
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import  Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import JWTError, jwt
-from urllib.request import urlopen
+from fastapi.security import HTTPBearer
+from jose import jwt as jose_jwt
+import jwt
 from config import settings
-from app.schemas.schemas import TokenBearerSchema
-import json
 
 bearer = HTTPBearer()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token/token/")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token/login/")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def login_get_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -52,9 +50,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.secret, algorithm=settings.algorithm)
+    encoded_jwt = jose_jwt.encode(to_encode, settings.secret, algorithm=settings.algorithm)
     return encoded_jwt
-
 
 class VerifyToken():
     def __init__(self, token, permissions=None, scopes=None):
@@ -62,13 +59,10 @@ class VerifyToken():
         self.permissions = permissions
         self.scopes = scopes
 
-        # This gets the JWKS from a given URL and does processing so you can use any of
-        # the keys available
         jwks_url = f'https://{settings.domain}/.well-known/jwks.json'
         self.jwks_client = jwt.PyJWKClient(jwks_url)
 
     def verify(self):
-        # This gets the 'kid' from the passed token
         try:
             self.signing_key = self.jwks_client.get_signing_key_from_jwt(
                 self.token
@@ -78,7 +72,7 @@ class VerifyToken():
         except jwt.exceptions.DecodeError as error:
             return {"status": "error", "msg": error.__str__()}
         try:
-            payload = jwt.decode(
+            payload = jose_jwt.decode(
                 self.token,
                 self.signing_key,
                 algorithms=settings.algorithm,
