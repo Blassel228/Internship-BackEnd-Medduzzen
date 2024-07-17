@@ -1,4 +1,26 @@
-In order to start server use "uvicorn app.main:app --reload"
-In order to use docker use "docker run -p 8000:8000 --name fastapi-app fastapi-app "
-In order to run docker-compose use "docker-compose build" to build an image and then "docker-compose up"
-to use container. After this you are connected to redis and postgres databases.
+Internship Backend Project
+This is a FastAPI-based backend project for an internship. The project includes endpoints for health checks and database connectivity checks. It uses PostgreSQL as the database and Redis for caching. The project is containerized using Docker and Docker Compose.
+
+Clone the repository:
+git clone https://github.com/Blassel228/Internship-BackEnd-Medduzzen
+
+Create a virtual environment and activate it:
+python -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+
+Install the dependencies:
+pip install -r requirements.txt
+
+Running the Project
+Ensure PostgreSQL and Redis are running in docker.
+Start the FastAPI server:
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+Running Using Docker
+Build and start the Docker containers:
+docker-compose up --build
+
+Endpoints:
+GET /: Root endpoint to check if the server is running.
+GET /db_check/redis_check: Endpoint to check Redis connection.
+GET /db_check/postgres_check: Endpoint to check PostgreSQL connection.
