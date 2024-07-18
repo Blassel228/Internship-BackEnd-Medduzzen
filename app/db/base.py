@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import MetaData
 from sqlalchemy.orm import declarative_base
-from config import settings
+from app.core.config import settings
 import redis.asyncio as redis
 
 metadata = MetaData()
