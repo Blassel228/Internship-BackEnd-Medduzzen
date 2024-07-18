@@ -1,20 +1,12 @@
-from app.autho.autho import login_get_token, oauth2_scheme, bearer, VerifyToken
+from app.autho.autho import login_get_token, oauth2_scheme, bearer, private
 from app.utils.deps import get_current_user, get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response
 from app.schemas.schemas import TokenSchema
 from sqlalchemy.ext.asyncio import AsyncSession
 
 token_router = APIRouter(tags=["token"], prefix="/token")
-
-
-def private(token: str, response: Response):
-    result = VerifyToken(token.credentials).verify()
-    if result.get("status"):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return result
-    return result
 
 @token_router.post("/login", response_model=TokenSchema)
 async def get_token(

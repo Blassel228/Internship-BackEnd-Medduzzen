@@ -113,3 +113,10 @@ class VerifyToken():
                                   "access to this resource")
                 return result
         return result
+
+def private(token: str, response: Response):
+    result = VerifyToken(token.credentials).verify()
+    if result.get("status"):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return result
+    return result

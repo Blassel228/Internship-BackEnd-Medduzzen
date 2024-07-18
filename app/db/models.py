@@ -11,7 +11,7 @@ logger.setLevel(logging.INFO)
 
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
-engine = create_async_engine(f'postgresql+asyncpg://{settings.postgresql_user}:{settings.postgresql_password}@{settings.postgresql_host}:{settings.postgresql_port}/{settings.postgresql_database_name}')
+engine = create_async_engine(settings.postgres_url)
 session = async_sessionmaker(engine, expire_on_commit=False)
 
 class UserModel(Base):
