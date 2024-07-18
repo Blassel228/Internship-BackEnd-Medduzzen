@@ -14,8 +14,8 @@ logger = logging.getLogger('alembic.runtime.migration')
 # access to the values within the .ini file in use.
 config = context.config
 
-database_url = os.getenv("POSTGRESQL_URL", f"postgresql://{settings.postgresql_user}:"
-                f"{settings.postgresql_password}@{settings.postgresql_host}/{settings.postgresql_database_name}")
+database_url = os.getenv("POSTGRESQL_URL", f"postgresql://{settings.postgres_user}:"
+                f"{settings.postgres_password}@localhost/{settings.postgres_db}")
 config.set_main_option('sqlalchemy.url', database_url)
 
 if config.config_file_name is not None:
