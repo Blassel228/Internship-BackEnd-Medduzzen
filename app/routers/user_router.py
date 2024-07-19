@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.schemas import UserCreateSchema, UserUpdateInSchema
 from fastapi import Depends
 
+
 user_router = APIRouter(prefix="/user", tags=["User"])
 
 
@@ -31,8 +32,8 @@ async def update(
     return await user_crud.user_update(id_=id_, data=data, db=db)
 
 
-@user_router.delete("/self_delete")
-async def self_delete(id_: int, db: AsyncSession = Depends(get_db)):
+@user_router.delete("/self")
+async def self(id_: int, db: AsyncSession = Depends(get_db)):
     return await user_crud.delete(id_=id_, db=db)
 
 

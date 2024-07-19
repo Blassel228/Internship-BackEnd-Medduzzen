@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import List, Optional
+from typing import Optional
 
 
 class UserCreateSchema(BaseModel):
@@ -31,3 +31,27 @@ class UserSelfUpdateSchema(BaseModel):
 class TokenSchema(BaseModel):
     access_token: str
     token_type: str
+
+
+class CompanyCreateSchema(BaseModel):
+    id: int
+    name: str
+    description: str
+    visible: bool
+
+
+class CompanyCreateInSchema(BaseModel):
+    id: int
+    name: str
+    description: str
+    visible: bool
+    owner_id: int
+
+
+class CompanyUpdateSchema(BaseModel):
+    name: str
+    description: str
+
+
+class CompanyUpdateVisibility(BaseModel):
+    visible: bool

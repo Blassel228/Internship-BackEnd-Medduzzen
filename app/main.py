@@ -4,6 +4,7 @@ from config import settings
 from app.routers.token_router import token_router
 from logging_config import LOGGING_CONFIG
 from app.routers.user_router import user_router
+from app.routers.company_router import company_router
 import logging
 
 logging.config.dictConfig(LOGGING_CONFIG)
@@ -12,6 +13,7 @@ app = FastAPI()
 
 app.include_router(user_router)
 app.include_router(token_router)
+app.include_router(company_router)
 
 
 @app.get("/")
