@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import dotenv
 
+
 class Settings(BaseSettings):
     uvicorn_host: str
     uvicorn_port: int
@@ -24,9 +25,12 @@ class Settings(BaseSettings):
 
     @property
     def postgres_url(self) -> str:
-        return (f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@"
-                f"{self.postgres_host}:{self.postgres_port}/{self.postgres_db}")
+        return (
+            f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@"
+            f"{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        )
 
-    model_config = SettingsConfigDict(env_file=dotenv.find_dotenv(), extra = "allow")
+    model_config = SettingsConfigDict(env_file=dotenv.find_dotenv(), extra="allow")
+
 
 settings = Settings()

@@ -12,6 +12,7 @@ from config import settings
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token/token/")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 async def get_db():
     db = session()
     try:
@@ -19,7 +20,10 @@ async def get_db():
     finally:
         await db.close()
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: AsyncSession = Depends(get_db)):
+
+async def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)], db: AsyncSession = Depends(get_db)
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
