@@ -32,7 +32,7 @@ async def update(
     return await user_crud.user_update(id_=id_, data=data, db=db)
 
 
-@user_router.delete("/self")
+@user_router.delete("/delete")
 async def self(id_: int, db: AsyncSession = Depends(get_db)):
     return await user_crud.delete(id_=id_, db=db)
 

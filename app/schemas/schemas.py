@@ -55,3 +55,28 @@ class CompanyUpdateSchema(BaseModel):
 
 class CompanyUpdateVisibility(BaseModel):
     visible: bool
+
+
+class InvitationCreateSchema(BaseModel):
+    id: int
+    company_id: int
+    recipient_id: int
+    invitation_text: str
+
+
+class MemberCreateSchema(BaseModel):
+    id: int
+    company_id: int
+
+
+class RequestCreateInSchema(BaseModel):
+    id: int
+    company_id: int
+    request_text: str
+
+
+class RequestCreateSchema(BaseModel):
+    id: int
+    company_id: int
+    sender_id: int
+    request_text: str

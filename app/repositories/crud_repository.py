@@ -17,8 +17,6 @@ class CrudRepository:
 
     async def get_one(self, id_: int, db: AsyncSession):
         res = await db.scalar(select(self.model).where(self.model.id == id_))
-        if res is None:
-            raise HTTPException(status_code=404, detail="Was was not found")
         return res
 
     async def add(self, data: BaseModel, db: AsyncSession):
@@ -50,7 +48,19 @@ class CrudRepository:
 
     async def delete(self, id_: int, db: AsyncSession):
         res = await self.get_one(id_=id_, db=db)
+        if res is None:
+            return None
         stmt = delete(self.model).where(self.model.id == id_)
         await db.execute(stmt)
         await db.commit()
         return res
+
+    async def get_one_by_filter(self, db: AsyncSession, filters: dict):
+        query = select(self.model).filter_by(**filters)
+        result = await db.scalar(query)
+        return result
+
+    async def get_all_by_filter(self, db: AsyncSession, filters: dict):
+        query = select(self.model).filter_by(**filters)
+        result = await db.scalars(query)
+        return result.all()
