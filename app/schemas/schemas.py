@@ -38,6 +38,7 @@ class CompanyCreateSchema(BaseModel):
     name: str
     description: str
     visible: bool
+    owner_id: int
 
 
 class CompanyCreateInSchema(BaseModel):
@@ -45,7 +46,6 @@ class CompanyCreateInSchema(BaseModel):
     name: str
     description: str
     visible: bool
-    owner_id: int
 
 
 class CompanyUpdateSchema(BaseModel):

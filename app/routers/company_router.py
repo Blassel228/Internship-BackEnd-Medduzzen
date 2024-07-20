@@ -15,11 +15,11 @@ company_router = APIRouter(prefix="/company", tags=["Company"])
 
 @company_router.get("/get_all_visible")
 async def get_all_visible(db: AsyncSession = Depends(get_db)):
-    return await company_crud.get_all(db=db)
+    return await company_crud.get_all_visible(db=db)
 
 
 @company_router.get("/get_one_visible")
-async def get_all_visible(id_: int, db: AsyncSession = Depends(get_db)):
+async def get_one_visible(id_: int, db: AsyncSession = Depends(get_db)):
     return await company_crud.get_one_visible(id_=id_, db=db)
 
 

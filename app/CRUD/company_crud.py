@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update, select
+from sqlalchemy.sql.operators import and_
 from app.db.models import CompanyModel
 from app.repositories.crud_repository import CrudRepository
 from fastapi import HTTPException
@@ -14,7 +15,7 @@ class CompanyCrud(CrudRepository):
 
     async def get_one_visible(self, id_: int, db: AsyncSession):
         stmt = select(self.model).where(
-            self.model.id == id_ and self.model.visible is True
+            and_(self.model.id == id_, self.model.visible == True)
         )
         res = await db.scalar(stmt)
         return res
@@ -46,11 +47,10 @@ class CompanyCrud(CrudRepository):
             )
         if user_id == res.owner_id:
             stmt = (
-                update(self.model)
-                .values(data.model_dump())
-                .where(self.model.owner_id == user_id)
+                update(self.model).values(data.model_dump()).where(self.model.id == id_)
             )
             await db.execute(stmt)
+            await db.commit()
         else:
             raise HTTPException(
                 status_code=403,

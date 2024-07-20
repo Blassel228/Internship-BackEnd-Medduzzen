@@ -9,7 +9,7 @@ from starlette import status
 from app.db.models import UserModel, session
 from config import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token/token/")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token/login/")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
