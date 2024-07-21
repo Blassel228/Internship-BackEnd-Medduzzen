@@ -1,4 +1,6 @@
 from fastapi import APIRouter
+
+from app.CRUD.quiz_crud import quiz_crud
 from app.services.quiz_service import quiz_service
 from app.utils.deps import get_db, get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,6 +31,15 @@ async def update(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    return await quiz_service.update(
-        db=db, data=data, user_id=current_user.id, company_id=company_id, id_=id_
-    )
+    return await quiz_service.update(db=db, data=data, user_id=current_user.id, id_=id_)
+
+
+@quiz_router.get("/get_all")
+async def get_all(db: AsyncSession = Depends(get_db)):
+    return await quiz_crud.get_all(db=db)
+
+
+@quiz_router.get("/get_one")
+async def get_one(id_: int, db: AsyncSession = Depends(get_db)):
+    quiz = await quiz_crud.get_one(id_=id_, db=db)
+    return quiz.__dict__

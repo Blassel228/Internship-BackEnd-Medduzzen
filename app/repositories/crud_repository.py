@@ -61,6 +61,13 @@ class CrudRepository:
         return result
 
     async def get_all_by_filter(self, db: AsyncSession, filters: dict):
-        query = select(self.model).filter_by(**filters)
-        result = await db.scalars(query)
+        stmt = select(self.model).filter_by(**filters)
+        result = await db.scalars(stmt)
         return result.all()
+
+    async def delete_all_by_filters(self, db: AsyncSession, filters: dict):
+        res = await self.get_all_by_filter(filters=filters, db=db)
+        stmt = delete(self.model).filter_by(**filters)
+        await db.execute(stmt)
+        await db.commit()
+        return res

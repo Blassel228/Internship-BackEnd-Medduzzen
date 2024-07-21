@@ -87,31 +87,13 @@ class OptionCreateSchema(BaseModel):
     is_correct: bool
 
 
-class OptionUpdateSchema(BaseModel):
-    id: int
-    text: str
-    is_correct: bool
-    question_id: int
-
-
 class QuestionCreateSchema(BaseModel):
     text: str
     options: List[OptionCreateSchema]
 
 
-class QuestionUpdateSchema(BaseModel):
-    id: int
-    text: str
-    quiz_id: int
-
 class QuizCreateSchema(BaseModel):
+    id: int
     name: str
     description: str
     questions: List[QuestionCreateSchema]
-
-
-class QuizUpdateSchema(BaseModel):
-    id: int
-    company_id: int
-    name: str
-    description: str

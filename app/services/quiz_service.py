@@ -5,7 +5,7 @@ from app.CRUD.member_crud import member_crud
 from app.CRUD.quiz_crud import quiz_crud
 from app.CRUD.option_crud import option_crud
 from app.CRUD.question_crud import question_crud
-from app.schemas.schemas import QuizCreateSchema, QuestionUpdateSchema, QuizUpdateSchema, OptionUpdateSchema
+from app.schemas.schemas import QuizCreateSchema
 from app.db.models.models import QuizModel, QuestionModel, OptionModel
 from fastapi import HTTPException
 
@@ -21,17 +21,11 @@ class QuizService:
         try:
             company = await company_crud.get_one(id_=company_id, db=db)
             member = await member_crud.get_one(id_=user_id, db=db)
-            if member is None:
+            if member is None or member.role != "admin":
                 if user_id != company.owner_id:
                     raise HTTPException(
                         status_code=403, detail="You are not a member of this company."
                     )
-
-            if member.role != "admin":
-                raise HTTPException(
-                    status_code=403,
-                    detail="You do not have permission to create a quiz.",
-                )
 
             if len(quiz_data.questions) < 2:
                 raise HTTPException(
@@ -74,14 +68,12 @@ class QuizService:
             raise e
 
     async def update(
-        self,
-        id_: int,
-        db: AsyncSession,
-        data: QuizCreateSchema,
-        user_id: int,
-        company_id: int,
+        self, id_: int, db: AsyncSession, data: QuizCreateSchema, user_id: int
     ):
-        if len(data.questions) < 2:
+        count = 0
+        for question in data.questions:
+            count+=1
+        if count < 2:
             raise HTTPException(
                 detail="There must be two or more questions", status_code=403
             )
@@ -92,29 +84,41 @@ class QuizService:
         company = await company_crud.get_one(id_=quiz.company_id, db=db)
         if company is None:
             raise HTTPException(detail="Company not found", status_code=404)
-        if member is None:
+        if member is None or member.role != "admin":
             if user_id != company.owner_id:
                 raise HTTPException(
                     status_code=403, detail="You are not a member of this company."
                 )
-        if member.role != "admin":
-            raise HTTPException(
-                status_code=403, detail="You do not have permission to create a quiz."
-            )
-        new_quiz = copy.copy(data)
-        await quiz_crud.update(
-            data=QuizUpdateSchema(**new_quiz.model_dump(exclude={"questions"}), db=db, id_=id_)
+        quiz.id = data.id
+        quiz.name = data.name
+        quiz.description = data.description
+        questions = await question_crud.get_all_by_filter(
+            filters={"quiz_id": id_}, db=db
         )
-        for new_question in data.questions:
-            for question in quiz.questions:
-                rewriten = 0
-                if rewriten != len(quiz.questions):
-                    await question_crud.update(data=QuestionUpdateSchema(**new_question.model_dump(exclude={"options"})), id_=question.id, db=db)
-                else:
-                    await question_crud.add(data=QuestionUpdateSchema(**new_question.model_dump()), db=db)
+        await question_crud.delete_all_by_filters(filters={"quiz_id": id_}, db=db)
+        for question in questions:
+            await option_crud.delete_all_by_filters(
+                filters={"question_id": question.id}, db=db
+            )
+        for question_data in data.questions:
+            if len(question_data.options) < 2:
+                raise HTTPException(
+                    detail="There must be two or more options for every question",
+                    status_code=403,
+                )
+            db_question = QuestionModel(text=question_data.text, quiz_id=quiz.id)
+            db.add(db_question)
+            await db.commit()
+            await db.refresh(db_question)
 
-
-
+            for option_data in question_data.options:
+                db_option = OptionModel(
+                    text=option_data.text,
+                    is_correct=option_data.is_correct,
+                    question_id=db_question.id,
+                )
+                db.add(db_option)
+        await db.commit()
         return quiz
 
 
