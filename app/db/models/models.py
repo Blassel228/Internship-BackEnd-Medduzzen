@@ -68,6 +68,7 @@ class MemberModel(Base):
         ForeignKey("company.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
+    role = Column(String, nullable=False, default="member")
     registration_date = Column(String, default=str(datetime.now()))
 
 

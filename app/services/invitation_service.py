@@ -43,10 +43,11 @@ class InvitationService:
                 detail="You do not possess the compony to send invitations",
             )
         member = await member_crud.get_one(id_=data.recipient_id, db=db)
-        if member.company_id == data.company_id:
-            raise HTTPException(
-                status_code=404, detail="The user is in your company already"
-            )
+        if member is not None:
+            if member.company_id == data.company_id:
+                raise HTTPException(
+                    status_code=404, detail="The user is in your company already"
+                )
         invitation = await invitation_crud.add(data=data, db=db)
         return invitation
 

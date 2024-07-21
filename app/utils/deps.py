@@ -6,7 +6,7 @@ from jose import jwt, JWTError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
-from app.db.models import UserModel, session
+from app.db.models.models import UserModel, session
 from config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token/login/")

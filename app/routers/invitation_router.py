@@ -41,7 +41,7 @@ async def send_invitation(
     )
 
 
-@invitation_router.put("/accept_invitation")
+@invitation_router.post("/accept_invitation")
 async def accept_invitation(
     id_: int, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):

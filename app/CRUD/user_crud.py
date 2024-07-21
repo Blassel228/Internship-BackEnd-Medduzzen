@@ -4,7 +4,7 @@ from app.schemas.schemas import UserCreateSchema, UserUpdateSchema, UserUpdateIn
 from sqlalchemy.dialects.postgresql import insert
 from app.utils.deps import pwd_context
 from app.repositories.crud_repository import CrudRepository
-from app.db.models import UserModel
+from app.db.models.models import UserModel
 from fastapi import HTTPException
 from sqlalchemy import select
 

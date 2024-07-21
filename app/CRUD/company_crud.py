@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update, select
 from sqlalchemy.sql.operators import and_
-from app.db.models import CompanyModel
+from app.db.models.models import CompanyModel
 from app.repositories.crud_repository import CrudRepository
 from fastapi import HTTPException
 from app.schemas.schemas import CompanyUpdateSchema
