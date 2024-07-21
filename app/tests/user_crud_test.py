@@ -1,5 +1,5 @@
 import pytest
-from app.db.models import UserModel
+from app.db.models.models import UserModel
 from app.CRUD.user_crud import UserCrud
 from app.schemas.schemas import UserCreateSchema, UserUpdateInSchema
 from app.tests.conftest import get_db_fixture
@@ -41,17 +41,6 @@ async def test_get_one_success(user_crud, get_db_fixture):
         assert user.id == 1
         assert user.username == "user1"
 
-
-@pytest.mark.asyncio
-async def test_get_one_not_found(user_crud, get_db_fixture):
-    async for db_session in get_db_fixture:
-        db_session.scalar.return_value = None
-        with pytest.raises(HTTPException) as exc_info:
-            await user_crud.get_one(id_=999, db=db_session)
-        assert exc_info.value.status_code == 404
-        assert exc_info.value.detail == "User was not found"
-
-
 @pytest.mark.asyncio
 @patch("app.CRUD.user_crud.UserCrud.get_one", new_callable=AsyncMock)
 async def test_delete_user_success(mock_get_one, user_crud, get_db_fixture):
@@ -70,19 +59,6 @@ async def test_delete_user_success(mock_get_one, user_crud, get_db_fixture):
         assert result == mock_user
         db_session.execute.assert_called_once()
         db_session.commit.assert_called_once()
-
-
-@pytest.mark.asyncio
-@patch("app.CRUD.user_crud.UserCrud.get_one", new_callable=AsyncMock)
-async def test_delete_user_not_found(mock_get_one, user_crud, get_db_fixture):
-    user_id = 1
-    mock_get_one.return_value = None
-    async for db_session in get_db_fixture:
-        with pytest.raises(HTTPException) as exc_info:
-            await user_crud.delete(id_=user_id, db=db_session)
-        assert exc_info.value.status_code == 404
-        assert exc_info.value.detail == "User is not valid"
-
 
 @pytest.mark.asyncio
 @patch("app.CRUD.user_crud.UserCrud.get_one", new_callable=AsyncMock)

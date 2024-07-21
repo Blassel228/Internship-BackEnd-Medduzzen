@@ -1,7 +1,7 @@
 from unittest.mock import patch
 from fastapi import HTTPException
 from app.services.request_service import RequestService
-from app.db.models import CompanyModel, RequestModel
+from app.db.models.models import CompanyModel, RequestModel
 from app.tests.conftest import get_db_fixture
 import pytest
 
@@ -41,7 +41,7 @@ async def test_owner_get_all_requests_success(
         assert result == mock_requests
         mock_get_one_company.assert_called_once_with(id_=company_id, db=db_session)
         mock_get_all_by_filter.assert_called_once_with(
-            filter={"company_id": company_id}
+            filters={"company_id": company_id}, db=db_session
         )
 
 
