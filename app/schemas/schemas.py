@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 
 
 class UserCreateSchema(BaseModel):
@@ -80,3 +80,38 @@ class RequestCreateSchema(BaseModel):
     company_id: int
     sender_id: int
     request_text: str
+
+
+class OptionCreateSchema(BaseModel):
+    text: str
+    is_correct: bool
+
+
+class OptionUpdateSchema(BaseModel):
+    id: int
+    text: str
+    is_correct: bool
+    question_id: int
+
+
+class QuestionCreateSchema(BaseModel):
+    text: str
+    options: List[OptionCreateSchema]
+
+
+class QuestionUpdateSchema(BaseModel):
+    id: int
+    text: str
+    quiz_id: int
+
+class QuizCreateSchema(BaseModel):
+    name: str
+    description: str
+    questions: List[QuestionCreateSchema]
+
+
+class QuizUpdateSchema(BaseModel):
+    id: int
+    company_id: int
+    name: str
+    description: str

@@ -87,3 +87,49 @@ class RequestModel(Base):
     )
     request_text = Column(String)
     registration_date = Column(String, default=str(datetime.now()))
+
+
+class QuizModel(Base):
+    __tablename__ = "quiz"
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer, ForeignKey("company.id", onupdate="CASCADE", ondelete="CASCADE")
+    )
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    questions = relationship(
+        "QuestionModel",
+        back_populates="quizzes",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    pass_count = Column(Integer, default=0)
+    registration_date = Column(String, default=str(datetime.now()))
+
+
+class QuestionModel(Base):
+    __tablename__ = "question"
+    id = Column(Integer, primary_key=True)
+    text = Column(String, nullable=False)
+    quiz_id = Column(
+        Integer,
+        ForeignKey("quiz.id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
+    options = relationship(
+        "OptionModel", back_populates="question", cascade="all, delete-orphan"
+    )
+    quizzes = relationship("QuizModel", back_populates="questions")
+
+
+class OptionModel(Base):
+    __tablename__ = "option"
+    id = Column(Integer, primary_key=True)
+    text = Column(String, nullable=False)
+    is_correct = Column(Boolean, nullable=False, default=False)
+    question_id = Column(
+        Integer,
+        ForeignKey("question.id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
+    question = relationship("QuestionModel", back_populates="options")

@@ -8,6 +8,7 @@ from app.routers.company_router import company_router
 from app.routers.invitation_router import invitation_router
 from app.routers.request_router import request_router
 from app.routers.member_router import member_router
+from app.routers.quiz_router import quiz_router
 import logging
 
 logging.config.dictConfig(LOGGING_CONFIG)
@@ -20,6 +21,7 @@ app.include_router(company_router)
 app.include_router(invitation_router)
 app.include_router(request_router)
 app.include_router(member_router)
+app.include_router(quiz_router)
 
 
 @app.get("/")
