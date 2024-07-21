@@ -5,11 +5,9 @@ from app.db.models.models import QuizModel
 
 
 class QuizCrud(CrudRepository):
-    async def get_quizzes(self, db: AsyncSession, limit: int = 10, offset: int = 0):
-        async with db.begin():
-            result = await db.execute(select(QuizModel).limit(limit).offset(offset))
-            quizzes = result.scalars().all()
-            return quizzes
+    async def get_all_pagination(self, db: AsyncSession, limit: int = 10, offset: int = 0):
+        result = await db.scalars(select(self.model).limit(limit).offset(offset))
+        return result.all()
 
 
 quiz_crud = QuizCrud(QuizModel)
