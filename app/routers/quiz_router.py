@@ -10,13 +10,12 @@ from fastapi import Depends
 
 quiz_router = APIRouter(prefix="/quiz", tags=["Quiz"])
 
+
 @quiz_router.get("/get_all_pagination")
 async def get_all_pagination(
-    limit: int = 10,
-    offset: int = 0,
-    db: AsyncSession = Depends(get_db)
+    limit: int = 10, offset: int = 0, db: AsyncSession = Depends(get_db)
 ):
-        return await quiz_crud.get_all_pagination(db=db, limit=limit, offset=offset)
+    return await quiz_crud.get_all_pagination(db=db, limit=limit, offset=offset)
 
 
 @quiz_router.post("/create")

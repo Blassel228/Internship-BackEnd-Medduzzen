@@ -72,7 +72,7 @@ class QuizService:
     ):
         count = 0
         for question in data.questions:
-            count+=1
+            count += 1
         if count < 2:
             raise HTTPException(
                 detail="There must be two or more questions", status_code=403
