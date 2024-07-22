@@ -1,6 +1,5 @@
-from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
+from pydantic import BaseModel, EmailStr
 
 
 class UserCreateSchema(BaseModel):

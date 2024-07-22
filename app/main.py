@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
-from config import settings
+from app.core.config import settings
 from app.routers.token_router import token_router
 from logging_config import LOGGING_CONFIG
 from app.routers.user_router import user_router
@@ -11,6 +11,7 @@ from app.routers.member_router import member_router
 from app.routers.quiz_router import quiz_router
 from app.routers.option_router import option_router
 from app.routers.quiz_result_router import quiz_result_router
+from app.routers.redis_router import redis_router
 import logging
 
 logging.config.dictConfig(LOGGING_CONFIG)
@@ -26,6 +27,7 @@ app.include_router(member_router)
 app.include_router(quiz_router)
 app.include_router(option_router)
 app.include_router(quiz_result_router)
+app.include_router(redis_router)
 
 
 @app.get("/")
@@ -36,15 +38,6 @@ def read_root():
 @app.get("/health_check")
 def health_check():
     return {"status_code": 200, "detail": "ok", "result": "healthy"}
-
-
-@app.get("/error")
-async def trigger_error():
-    try:
-        1 / 0
-    except ZeroDivisionError as e:
-        logger.exception("An error occurred: %s", e)
-        raise e
 
 
 if __name__ == "__main__":

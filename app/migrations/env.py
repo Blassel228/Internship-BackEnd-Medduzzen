@@ -1,6 +1,6 @@
 from sqlalchemy import pool
 from alembic import context
-from config import settings
+from app.core.config import settings
 from app.db.models.models import metadata
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config
