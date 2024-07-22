@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
-from config import settings
+from app.core.config import settings
 import logging
 from logging_config import LOGGING_CONFIG
 
