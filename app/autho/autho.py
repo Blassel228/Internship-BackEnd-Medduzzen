@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer
 from jose import jwt as jose_jwt
-from config import settings
+from app.core.config import settings
 
 bearer = HTTPBearer()
 
