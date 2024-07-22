@@ -18,6 +18,7 @@ database_url = os.getenv(
     "POSTGRESQL_URL",
     settings.postgres_url
 )
+
 config.set_main_option("sqlalchemy.url", database_url)
 
 if config.config_file_name is not None:

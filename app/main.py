@@ -3,10 +3,14 @@ from fastapi import FastAPI
 from app.core.config import settings
 import logging
 from logging_config import LOGGING_CONFIG
+from app.routers.user_router import user_router
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
 app = FastAPI()
+
+
+app.include_router(user_router)
 
 
 @app.get("/")

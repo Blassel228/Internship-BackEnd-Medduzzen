@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     uvicorn_host: str
     uvicorn_port: int
 
+
     postgres_host: str
     postgres_port: int
     postgres_db: str
@@ -13,7 +14,7 @@ class Settings(BaseSettings):
     postgres_user: str
 
     redis_port: int
-    redis_pass: str
+    redis_password: str
     redis_host: str
 
     cors_origins: list[str] = ["http://127.0.0.1:8000", "http://0.0.0.0:8000"]

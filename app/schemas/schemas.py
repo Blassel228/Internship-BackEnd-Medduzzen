@@ -2,28 +2,22 @@ from pydantic import BaseModel, EmailStr
 from typing import List
 
 
-class UserSchema(BaseModel):  # UserDetail
+class UserCreateSchema(BaseModel):
     id: int
     username: str
     password: str
     email: EmailStr
 
 
-class SignUpSchema(BaseModel):
+class UserUpdateInSchema(BaseModel):
+    id: int
     username: str
     password: str
     email: EmailStr
 
 
-class SignInSchema(BaseModel):
+class UserUpdateSchema(BaseModel):
+    id: int
     username: str
-    password: str
-
-
-class UserUpdateRequestSchema(BaseModel):
-    username: str
-    password: str
-
-
-class UsersListSchema(BaseModel):
-    users: List[UserSchema]
+    hashed_password: str
+    email: EmailStr
