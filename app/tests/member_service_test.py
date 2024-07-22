@@ -1,9 +1,10 @@
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch, AsyncMock
 from app.services.member_service import MemberService
 from app.db.models.models import CompanyModel, MemberModel
 from fastapi import HTTPException
 from app.tests.conftest import get_db_fixture
+
 
 @pytest.fixture
 async def member_service():
@@ -14,7 +15,7 @@ async def member_service():
 @patch("app.CRUD.company_crud.company_crud.get_one")
 @patch("app.CRUD.member_crud.member_crud.get_one")
 async def test_demote_member_from_admin_success(
-        mock_get_member, mock_get_company, get_db_fixture, member_service
+    mock_get_member, mock_get_company, get_db_fixture, member_service
 ):
     member_service = await member_service
     user_id = 1

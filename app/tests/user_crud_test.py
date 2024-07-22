@@ -41,6 +41,7 @@ async def test_get_one_success(user_crud, get_db_fixture):
         assert user.id == 1
         assert user.username == "user1"
 
+
 @pytest.mark.asyncio
 @patch("app.CRUD.user_crud.UserCrud.get_one", new_callable=AsyncMock)
 async def test_delete_user_success(mock_get_one, user_crud, get_db_fixture):
@@ -59,6 +60,7 @@ async def test_delete_user_success(mock_get_one, user_crud, get_db_fixture):
         assert result == mock_user
         db_session.execute.assert_called_once()
         db_session.commit.assert_called_once()
+
 
 @pytest.mark.asyncio
 @patch("app.CRUD.user_crud.UserCrud.get_one", new_callable=AsyncMock)

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Float
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import MetaData
 from sqlalchemy.orm import declarative_base, relationship
@@ -133,3 +133,28 @@ class OptionModel(Base):
         nullable=False,
     )
     question = relationship("QuestionModel", back_populates="options")
+
+
+class QuizResultModel(Base):
+    __tablename__ = "quiz_result"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(
+        Integer,
+        ForeignKey("user.id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
+    company_id = Column(
+        Integer,
+        ForeignKey("company.id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
+    quiz_id = Column(
+        Integer,
+        ForeignKey("quiz.id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
+    score = Column(Float, nullable=False)
+    user = relationship("UserModel", backref="quiz_results")
+    company = relationship("CompanyModel", backref="quiz_results")
+    quiz = relationship("QuizModel", backref="quiz_results")
+    registration_date = Column(String, default=str(datetime.now()))

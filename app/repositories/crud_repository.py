@@ -21,30 +21,22 @@ class CrudRepository:
 
     async def add(self, data: BaseModel, db: AsyncSession):
         stmt = insert(self.model).values(**data.model_dump())
-        try:
-            await db.execute(stmt)
-            await db.commit()
-            res = await self.get_one(id_=data.id, db=db)
-            return res
-        except Exception as e:
-            logger.error(f"Error adding entity: {e}")
-            raise HTTPException(status_code=500, detail="Failed to add entity")
+        await db.execute(stmt)
+        await db.commit()
+        res = await self.get_one(id_=data.id, db=db)
+        return res
 
     async def update(self, id_: int, data: BaseModel, db: AsyncSession):
 
         stmt = (
             update(self.model).values(**data.model_dump()).where(self.model.id == id_)
         )
-        try:
-            res = await db.execute(stmt)
-            if res.rowcount == 0:
-                return None
-            await db.commit()
-            res = await self.get_one(id_=id_, db=db)
-            return res
-        except Exception as e:
-            logger.error(f"Error updating entity: {e}")
-            raise e
+        res = await db.execute(stmt)
+        if res.rowcount == 0:
+            return None
+        await db.commit()
+        res = await self.get_one(id_=id_, db=db)
+        return res
 
     async def delete(self, id_: int, db: AsyncSession):
         res = await self.get_one(id_=id_, db=db)

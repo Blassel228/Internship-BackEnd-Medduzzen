@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr
+from datetime import datetime
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 
 
@@ -97,3 +98,22 @@ class QuizCreateSchema(BaseModel):
     name: str
     description: str
     questions: List[QuestionCreateSchema]
+
+
+class QuizResultCreateInSchema(BaseModel):
+    id: int
+    quiz_id: int
+    options_ids: list
+
+
+class QuizResultCreateSchema(BaseModel):
+    id: int
+    quiz_id: int
+    company_id: int
+    score: float
+    user_id: int
+
+
+class QuizResultUpdateSchema(BaseModel):
+    score: float
+    registration_date: str
