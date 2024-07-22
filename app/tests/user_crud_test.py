@@ -1,5 +1,5 @@
 import pytest
-from app.db.models import UserModel
+from app.db.models.models import UserModel
 from app.CRUD.user_crud import UserCrud
 from app.schemas.schemas import UserCreateSchema, UserUpdateInSchema
 from app.tests.conftest import get_db_fixture

@@ -3,14 +3,14 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Annotated
 from fastapi import status
 from passlib.context import CryptContext
-from app.db.models import UserModel
+from app.db.models.models import UserModel
 from app.utils.deps import get_db
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import  Depends, HTTPException
 from fastapi.security import HTTPBearer
 from jose import jwt as jose_jwt
-from config import settings
+from app.core.config import settings
 
 bearer = HTTPBearer()
 

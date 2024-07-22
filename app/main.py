@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
-from config import settings
+from app.core.config import settings
 from app.routers.token_router import token_router
 from logging_config import LOGGING_CONFIG
 from app.routers.user_router import user_router

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     redis_host: str
     redis_port: int
-    redis_pass: str
+    redis_password: str
 
     algorithm: str
     secret: str
@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     @property
     def postgres_url(self) -> str:
         return (f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@"
-                f"{self.postgres_host}:{self.postgres_port}/{self.postgres_db}")
+                f"localhost:{self.postgres_port}/{self.postgres_db}")
 
     model_config = SettingsConfigDict(env_file=dotenv.find_dotenv(), extra = "allow")
 
