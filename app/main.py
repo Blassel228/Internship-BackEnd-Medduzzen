@@ -9,6 +9,7 @@ logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
 app = FastAPI()
 
+
 app.include_router(user_router)
 
 
@@ -20,15 +21,6 @@ def read_root():
 @app.get("/health_check")
 def health_check():
     return {"status_code": 200, "detail": "ok", "result": "healthy"}
-
-
-@app.get("/error")
-async def trigger_error():
-    try:
-        1 / 0
-    except ZeroDivisionError as e:
-        logger.exception("An error occurred: %s", e)
-        raise e
 
 
 if __name__ == "__main__":
