@@ -18,6 +18,13 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://127.0.0.1:8000", "http://0.0.0.0:8000"]
 
+    @property
+    def postgres_url(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@"
+            f"localhost:{self.postgres_port}/{self.postgres_db}"
+        )
+
     model_config = SettingsConfigDict(env_file=dotenv.find_dotenv(), extra="allow")
 
     @property
