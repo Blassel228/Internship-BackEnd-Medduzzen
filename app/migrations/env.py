@@ -1,7 +1,7 @@
 from sqlalchemy import pool
 from alembic import context
-from config import settings
-from app.db.models import metadata
+from app.core.config import settings
+from app.db.models.models import metadata
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 import logging
@@ -9,20 +9,23 @@ import os
 from logging_config import LOGGING_CONFIG
 
 logging.config.dictConfig(LOGGING_CONFIG)
-logger = logging.getLogger('alembic.runtime.migration')
+logger = logging.getLogger("alembic.runtime.migration")
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-database_url = os.getenv("POSTGRESQL_URL", f"postgresql://{settings.postgresql_user}:"
-                f"{settings.postgresql_password}@{settings.postgresql_host}/{settings.postgresql_database_name}")
-config.set_main_option('sqlalchemy.url', database_url)
+database_url = os.getenv(
+    "POSTGRESQL_URL",
+    f"postgresql://{settings.postgresql_user}:"
+    f"{settings.postgresql_password}@{settings.postgresql_host}/{settings.postgresql_database_name}",
+)
+config.set_main_option("sqlalchemy.url", database_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Set up logging
-logger = logging.getLogger('alembic.runtime.migration')
+logger = logging.getLogger("alembic.runtime.migration")
 logger.setLevel(logging.INFO)
 
 
@@ -78,9 +81,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=metadata
-        )
+        context.configure(connection=connection, target_metadata=metadata)
 
         with context.begin_transaction():
             context.run_migrations()

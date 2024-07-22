@@ -1,5 +1,5 @@
 import pytest
-from app.db.models import UserModel
+from app.db.models.models import UserModel
 from app.CRUD.user_crud import UserCrud
 from app.schemas.schemas import UserCreateSchema, UserUpdateInSchema
 from app.tests.conftest import get_db_fixture
@@ -7,9 +7,11 @@ from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi import HTTPException
 from app.utils.deps import pwd_context
 
+
 @pytest.fixture
 def user_crud():
     return UserCrud(UserModel)
+
 
 @pytest.mark.asyncio
 async def test_get_all(user_crud, get_db_fixture):
@@ -28,6 +30,7 @@ async def test_get_all(user_crud, get_db_fixture):
         assert users[0].username == "user1"
         assert users[1].username == "user2"
 
+
 @pytest.mark.asyncio
 async def test_get_one_success(user_crud, get_db_fixture):
     mock_user = UserModel(id=1, username="user1", email="user1@example.com")
@@ -38,6 +41,7 @@ async def test_get_one_success(user_crud, get_db_fixture):
         assert user.id == 1
         assert user.username == "user1"
 
+
 @pytest.mark.asyncio
 async def test_get_one_not_found(user_crud, get_db_fixture):
     async for db_session in get_db_fixture:
@@ -47,11 +51,17 @@ async def test_get_one_not_found(user_crud, get_db_fixture):
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == "User was not found"
 
+
 @pytest.mark.asyncio
-@patch('app.CRUD.user_crud.UserCrud.get_one', new_callable=AsyncMock)
+@patch("app.CRUD.user_crud.UserCrud.get_one", new_callable=AsyncMock)
 async def test_delete_user_success(mock_get_one, user_crud, get_db_fixture):
     user_id = 1
-    mock_user = UserModel(id=user_id, username="test_user", email="test@example.com", hashed_password="hashed_password")
+    mock_user = UserModel(
+        id=user_id,
+        username="test_user",
+        email="test@example.com",
+        hashed_password="hashed_password",
+    )
     mock_get_one.return_value = mock_user
     async for db_session in get_db_fixture:
         db_session.execute = AsyncMock()
@@ -61,8 +71,9 @@ async def test_delete_user_success(mock_get_one, user_crud, get_db_fixture):
         db_session.execute.assert_called_once()
         db_session.commit.assert_called_once()
 
+
 @pytest.mark.asyncio
-@patch('app.CRUD.user_crud.UserCrud.get_one', new_callable=AsyncMock)
+@patch("app.CRUD.user_crud.UserCrud.get_one", new_callable=AsyncMock)
 async def test_delete_user_not_found(mock_get_one, user_crud, get_db_fixture):
     user_id = 1
     mock_get_one.return_value = None
@@ -72,21 +83,24 @@ async def test_delete_user_not_found(mock_get_one, user_crud, get_db_fixture):
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == "User is not valid"
 
+
 @pytest.mark.asyncio
-@patch('app.CRUD.user_crud.UserCrud.get_one', new_callable=AsyncMock)
+@patch("app.CRUD.user_crud.UserCrud.get_one", new_callable=AsyncMock)
 async def test_add_user_success(mock_get_one, user_crud, get_db_fixture):
     user_data = {
         "id": 1,
         "username": "test_user",
         "password": "test_password",
-        "email": "test@example.com"
+        "email": "test@example.com",
     }
     user_create_schema = UserCreateSchema(**user_data)
     async for db_session in get_db_fixture:
         db_session.execute = AsyncMock()
         db_session.commit = AsyncMock()
         hashed_password = pwd_context.hash(user_data.pop("password"))
-        mock_get_one.return_value = UserModel(**user_data, hashed_password=hashed_password)
+        mock_get_one.return_value = UserModel(
+            **user_data, hashed_password=hashed_password
+        )
         result = await user_crud.add(data=user_create_schema, db=db_session)
         assert result.id == 1
         assert result.username == "test_user"
@@ -94,14 +108,15 @@ async def test_add_user_success(mock_get_one, user_crud, get_db_fixture):
         db_session.execute.assert_called_once()
         db_session.commit.assert_called_once()
 
+
 @pytest.mark.asyncio
-@patch('app.CRUD.user_crud.UserCrud.get_one', new_callable=AsyncMock)
+@patch("app.CRUD.user_crud.UserCrud.get_one", new_callable=AsyncMock)
 async def test_add_user_failure(mock_get_one, user_crud, get_db_fixture):
     user_data = {
         "id": 1,
         "username": "test_user",
         "password": "test_password",
-        "email": "test@example.com"
+        "email": "test@example.com",
     }
     user_create_schema = UserCreateSchema(**user_data)
     mock_get_one.return_value = None
@@ -115,21 +130,24 @@ async def test_add_user_failure(mock_get_one, user_crud, get_db_fixture):
         assert exc_info.value.status_code == 500
         assert exc_info.value.detail == "Something went wrong when adding a user"
 
+
 @pytest.mark.asyncio
-@patch('app.CRUD.user_crud.UserCrud.update', new_callable=AsyncMock)
+@patch("app.CRUD.user_crud.UserCrud.update", new_callable=AsyncMock)
 async def test_user_update_success(mock_update, user_crud, get_db_fixture):
     user_data = {
         "id": 1,
         "username": "updated_user",
         "password": "new_password",
-        "email": "updated@example.com"
+        "email": "updated@example.com",
     }
     user_update_schema = UserUpdateInSchema(**user_data)
     hashed_password = pwd_context.hash(user_data.pop("password"))
     mock_user = UserModel(**user_data, hashed_password=hashed_password)
     async for db_session in get_db_fixture:
         mock_update.return_value = mock_user
-        result = await user_crud.user_update(id_=1, data=user_update_schema, db=db_session)
+        result = await user_crud.user_update(
+            id_=1, data=user_update_schema, db=db_session
+        )
         assert result.id == 1
         assert result.username == "updated_user"
         assert result.email == "updated@example.com"
@@ -137,15 +155,17 @@ async def test_user_update_success(mock_update, user_crud, get_db_fixture):
 
 
 @pytest.mark.asyncio
-@patch('app.CRUD.user_crud.UserCrud.update', new_callable=AsyncMock)
-@patch('app.CRUD.user_crud.UserCrud.get_one', new_callable=AsyncMock)
-@patch('app.CRUD.user_crud.logger')
-async def test_user_update_not_found(mock_logger, mock_get_one, mock_update, user_crud, get_db_fixture):
+@patch("app.CRUD.user_crud.UserCrud.update", new_callable=AsyncMock)
+@patch("app.CRUD.user_crud.UserCrud.get_one", new_callable=AsyncMock)
+@patch("app.CRUD.user_crud.logger")
+async def test_user_update_not_found(
+    mock_logger, mock_get_one, mock_update, user_crud, get_db_fixture
+):
     user_data = {
         "id": 1,
         "username": "updated_user",
         "password": "new_password",
-        "email": "updated@example.com"
+        "email": "updated@example.com",
     }
     user_update_schema = UserUpdateInSchema(**user_data)
 

@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import dotenv
 
+
 class Settings(BaseSettings):
     uvicorn_host: str
     uvicorn_port: int
@@ -15,6 +16,7 @@ class Settings(BaseSettings):
     redis_port: int
     redis_pass: str
 
-    model_config = SettingsConfigDict(env_file=dotenv.find_dotenv(), extra = "allow")
+    model_config = SettingsConfigDict(env_file=dotenv.find_dotenv(), extra="allow")
+
 
 settings = Settings()

@@ -4,11 +4,12 @@ from app.schemas.schemas import UserCreateSchema, UserUpdateSchema, UserUpdateIn
 from sqlalchemy.dialects.postgresql import insert
 from app.utils.deps import pwd_context
 from app.repositories.crud_repository import CrudRepository
-from app.db.models import UserModel
+from app.db.models.models import UserModel
 from fastapi import HTTPException
 from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
+
 
 class UserCrud(CrudRepository):
     async def get_all(self, db: AsyncSession, skip: int = 0, limit: int = 10):
@@ -24,7 +25,7 @@ class UserCrud(CrudRepository):
     async def add(self, data: UserCreateSchema, db: AsyncSession):
         data = data.model_dump()
         hashed_password = pwd_context.hash(data.pop("password"))
-        data['hashed_password'] = hashed_password
+        data["hashed_password"] = hashed_password
         stmt = insert(self.model).values(**data)
 
         try:
@@ -32,18 +33,24 @@ class UserCrud(CrudRepository):
             await db.commit()
             res = await self.get_one(id_=data["id"], db=db)
             if res is None:
-                logger.error("Failed to add user: User retrieval after insertion failed.")
-                raise HTTPException(status_code=500, detail="Something went wrong when adding a user")
+                logger.error(
+                    "Failed to add user: User retrieval after insertion failed."
+                )
+                raise HTTPException(
+                    status_code=500, detail="Something went wrong when adding a user"
+                )
             logger.info(f"User {data['username']} added successfully.")
             return res
         except Exception as e:
             logger.error(f"Error adding user: {e}")
-            raise HTTPException(status_code=500, detail="Something went wrong when adding a user")
+            raise HTTPException(
+                status_code=500, detail="Something went wrong when adding a user"
+            )
 
     async def user_update(self, id_: int, data: UserUpdateInSchema, db: AsyncSession):
         data = data.model_dump()
         hashed_password = pwd_context.hash(data.pop("password"))
-        data['hashed_password'] = hashed_password
+        data["hashed_password"] = hashed_password
         try:
             res = await self.update(id_=id_, data=UserUpdateSchema(**data), db=db)
             if res is None:
@@ -53,6 +60,9 @@ class UserCrud(CrudRepository):
             raise e
         except Exception as e:
             logger.error(f"Error updating user: {e}")
-            raise HTTPException(status_code=500, detail="Something went wrong while updating the user")
+            raise HTTPException(
+                status_code=500, detail="Something went wrong while updating the user"
+            )
+
 
 user_crud = UserCrud(UserModel)
