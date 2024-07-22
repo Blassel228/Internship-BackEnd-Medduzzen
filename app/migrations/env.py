@@ -1,7 +1,7 @@
 from sqlalchemy import pool
 from alembic import context
 from app.core.config import settings
-from app.db.models import metadata
+from app.db.models.models import metadata
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 import logging
@@ -16,8 +16,7 @@ config = context.config
 
 database_url = os.getenv(
     "POSTGRESQL_URL",
-    f"postgresql://{settings.postgresql_user}:"
-    f"{settings.postgresql_password}@{settings.postgresql_host}/{settings.postgresql_database_name}",
+    settings.postgres_url
 )
 config.set_main_option("sqlalchemy.url", database_url)
 

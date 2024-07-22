@@ -11,7 +11,7 @@ logger.setLevel(logging.INFO)
 
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
-engine = create_async_engine(f"{settings.po}")
+engine = create_async_engine(f"{settings.postgres_url}")
 session = async_sessionmaker(engine, expire_on_commit=False)
 
 

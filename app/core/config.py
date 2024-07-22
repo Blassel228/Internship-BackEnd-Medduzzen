@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     redis_port: int
     redis_password: str
 
+    @property
+    def postgres_url(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@"
+            f"localhost:{self.postgres_port}/{self.postgres_db}"
+        )
+
     model_config = SettingsConfigDict(env_file=dotenv.find_dotenv(), extra="allow")
 
 
