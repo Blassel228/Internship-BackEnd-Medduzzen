@@ -61,6 +61,7 @@ class UserCrud(CrudRepository):
             if res is None:
                 raise HTTPException(status_code=404, detail="User is not valid")
             await db.commit()
+
             return res
         except HTTPException as e:
             raise e
