@@ -11,22 +11,25 @@ class RedisService:
     async def cache_quiz_result(self, data: dict):
         redis = await redis_connect()
         data_json = json.dumps(data)
-        key = f"quiz_result:{data['quiz']['id']}:{data['user']['id']}:{data['quiz']['company_id']}"
+        key = f"quiz_result:{data['quiz_id']}:{data['user_id']}:{data['company_id']}"
+        print(key)
         await redis.set(key, data_json, ex=172800)
+        await redis.close()
 
     async def get_from_cache(self, key):
         redis = await redis_connect()
         cached_data_json = await redis.get(key)
         if cached_data_json:
             return json.loads(cached_data_json)
+        await redis.close()
         return None
 
     async def get_cached_result(self, quiz_id: int, user_id: int):
-        key = f"quiz_result:{quiz_id}:{user_id}*"
+        key = f"quiz_result:{quiz_id}:{user_id}:*"
         return await self.get_from_cache(key)
 
     async def user_get_its_result(self, user_id: int):
-        key = f"quiz_result:*:{user_id}*"
+        key = f"quiz_result:*:{user_id}:*"
         return await self.get_from_cache(key)
 
     async def admin_get_all_company_results(self, user_id: int, db: AsyncSession):

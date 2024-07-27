@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 security = HTTPBearer()
 
-token_router = APIRouter(tags=["token"], prefix="/token")
+token_router = APIRouter(tags=["Token"], prefix="/token")
 
 
 @token_router.post("/login", response_model=TokenSchema)

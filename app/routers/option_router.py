@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends
 from app.CRUD.option_crud import option_crud
 
-option_router = APIRouter(tags=["option"], prefix="/option")
+option_router = APIRouter(tags=["Option"], prefix="/option")
 
 
 @option_router.get("/get_all")

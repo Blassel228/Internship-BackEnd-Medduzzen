@@ -5,7 +5,7 @@ from app.services.member_service import member_service
 from app.CRUD.member_crud import member_crud
 from fastapi import APIRouter, Depends
 
-member_router = APIRouter(tags=["member"], prefix="/member")
+member_router = APIRouter(tags=["Member"], prefix="/member")
 
 
 @member_router.get("/get_users_in_company")

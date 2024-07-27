@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils.deps import get_current_user
 from app.services.request_service import request_service
 
-request_router = APIRouter(tags=["request"], prefix="/request")
+request_router = APIRouter(tags=["Request"], prefix="/request")
 
 
 @request_router.get("/user_get_all_sent_requests")
