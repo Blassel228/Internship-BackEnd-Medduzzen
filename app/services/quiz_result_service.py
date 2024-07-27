@@ -18,6 +18,55 @@ from app.services.redis_service import redis_service
 
 
 class QuizResultService:
+    async def user_get_its_result(self, user_id: int, db: AsyncSession):
+        results = await quiz_result_crud.get_all_by_filter(
+            db=db, filters={"user_id": user_id}
+        )
+        return results
+
+    async def get_all_company_results(
+        self, id_: int, user_id: int, company_id: int, db: AsyncSession
+    ):
+        member = await member_crud.get_one(id_=user_id, db=db)
+        company = await member_crud.get_one(id_=company_id, db=db)
+        if member is None:
+            if company.owner_id != user_id:
+                raise HTTPException(
+                    status_code=403, detail="You have no right to get all users results"
+                )
+        if member.role != "admin":
+            company = await company_crud.get_one(id_=member.company_id)
+            if company is None:
+                raise HTTPException(
+                    status_code=403, detail="You are not a member of this company."
+                )
+        results = await quiz_result_crud.get_all_by_filter(
+            db=db, filters={"company_id": company_id}
+        )
+        return results
+
+    async def get_results_for_user(
+        self, user_id: int, id_: int, company_id: int, db: AsyncSession
+    ):
+        member = await member_crud.get_one(id_=user_id, db=db)
+        company = await member_crud.get_one(id_=company_id, db=db)
+        if member is None:
+            if company.owner_id != user_id:
+                raise HTTPException(
+                    status_code=403, detail="You have no right to get all users results"
+                )
+        if member.role != "admin":
+            company = await company_crud.get_one(id_=member.company_id)
+            if company is None:
+                raise HTTPException(
+                    status_code=403, detail="You are not a member of this company."
+                )
+
+        results = await quiz_result_crud.get_all_by_filter(
+            db=db, filters={"user_id": id_}
+        )
+        return results
+
     async def pass_quiz(
         self, data: QuizResultCreateInSchema, user_id: int, db: AsyncSession
     ):
