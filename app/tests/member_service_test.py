@@ -178,3 +178,59 @@ async def test_promote_member_to_admin_errors(
             )
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == "Member not found in this company"
+
+
+@pytest.mark.asyncio
+@patch("app.services.member_service.member_crud")
+@patch("app.services.member_service.company_crud")
+async def test_fire_user_success(
+    mock_company_crud, mock_member_crud, member_service, get_db_fixture
+):
+    member_service = await member_service
+    mock_member = MemberModel(id=2, role="member", company_id=1)
+    mock_company = CompanyModel(id=1, owner_id=1)
+
+    mock_member_crud.get_one = AsyncMock(return_value=mock_member)
+    mock_company_crud.get_one = AsyncMock(return_value=mock_company)
+    mock_member_crud.delete = AsyncMock()
+
+    async for db_session in get_db_fixture:
+        result = await member_service.fire_user(id_=2, user_id=1, db=db_session)
+        assert result == mock_member
+        mock_member_crud.get_one.assert_called_once_with(id_=2, db=db_session)
+        mock_company_crud.get_one.assert_called_once_with(
+            id_=mock_member.company_id, db=db_session
+        )
+        mock_member_crud.delete.assert_called_once_with(id_=2, db=db_session)
+
+
+@pytest.mark.asyncio
+@patch("app.services.member_service.member_crud")
+@patch("app.services.member_service.company_crud")
+async def test_fire_user_errors(
+    mock_company_crud, mock_member_crud, member_service, get_db_fixture
+):
+    member_service = await member_service
+    async for db_session in get_db_fixture:
+        mock_member_crud.get_one = AsyncMock(return_value=None)
+        with pytest.raises(HTTPException) as exc_info:
+            await member_service.fire_user(id_=1, user_id=1, db=db_session)
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == "There is no such a user"
+
+        mock_member_crud.get_one = AsyncMock(
+            return_value=MemberModel(id=1, company_id=1)
+        )
+        mock_company_crud.get_one = AsyncMock(return_value=None)
+        with pytest.raises(HTTPException) as exc_info:
+            await member_service.fire_user(id_=1, user_id=1, db=db_session)
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == "Such a company was not found"
+
+        mock_company_crud.get_one = AsyncMock(
+            return_value=CompanyModel(id=1, owner_id=2)
+        )
+        with pytest.raises(HTTPException) as exc_info:
+            await member_service.fire_user(id_=1, user_id=1, db=db_session)
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail == "You are not the owner of the company"

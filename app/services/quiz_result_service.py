@@ -58,7 +58,6 @@ class QuizResultService:
                 right_answers += 1
 
             user_answers[question.id] = {
-                "question_text": question.text,
                 "provided_option_id": provided_option,
                 "is_correct": option.is_correct,
             }
@@ -90,20 +89,17 @@ class QuizResultService:
             )
 
         result_data = {
-            "quiz": {
-                "id": quiz.id,
-                "name": quiz.name,
-                "description": quiz.description,
-            },
-            "company": {
-                "id": company.id,
-                "name": company.name,
-                "description": company.description,
-            },
-            "user": {"id": user.id, "email": user.email},
-            "questions": questions_info,
+            "quiz_id": quiz.id,
+            "quiz_name": quiz.name,
+            "quiz_description": quiz.description,
+            "company_id": company.id,
+            "company_name": company.name,
+            "company_description": company.description,
+            "user_id": user.id,
+            "user_email": user.email,
+            **questions_info,
             "score": score,
-            "user_answers": user_answers,
+            **user_answers,
         }
         await redis_service.cache_quiz_result(data=result_data)
 

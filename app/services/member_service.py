@@ -61,7 +61,7 @@ class MemberService:
             raise HTTPException(status_code=404, detail="Such a company was not found")
         if company.owner_id != user_id:
             raise HTTPException(
-                status_code=403, detail="You are no the owner of the company"
+                status_code=403, detail="You are not the owner of the company"
             )
         await member_crud.delete(id_=id_, db=db)
         return member
