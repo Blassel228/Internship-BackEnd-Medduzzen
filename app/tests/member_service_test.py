@@ -234,3 +234,59 @@ async def test_fire_user_errors(
             await member_service.fire_user(id_=1, user_id=1, db=db_session)
         assert exc_info.value.status_code == 403
         assert exc_info.value.detail == "You are not the owner of the company"
+
+
+@pytest.mark.asyncio
+@patch("app.CRUD.member_crud.member_crud.get_one", new_callable=AsyncMock)
+@patch("app.CRUD.member_crud.member_crud.delete", new_callable=AsyncMock)
+async def test_user_resign(mock_delete, mock_get_one, member_service):
+    member_service = await member_service
+    mock_get_one.return_value = None
+    with pytest.raises(HTTPException) as exc_info:
+        await member_service.user_resign(db=AsyncMock(), user_id=1)
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.detail == "You are not a member in any company"
+
+    mock_get_one.return_value = MemberModel(id=1, company_id=1, role="member")
+    mock_delete.return_value = None
+    member = await member_service.user_resign(db=AsyncMock(), user_id=1)
+    assert member.id == 1
+    assert member.company_id == 1
+
+
+@pytest.mark.asyncio
+@patch("app.CRUD.company_crud.company_crud.get_one", new_callable=AsyncMock)
+@patch(
+    "app.CRUD.member_crud.member_crud.get_all_by_filter_pagination",
+    new_callable=AsyncMock,
+)
+async def test_get_users_in_company(
+    mock_get_all_by_filter_pagination, mock_get_one, member_service
+):
+    member_service = await member_service
+    mock_get_one.return_value = None
+    with pytest.raises(HTTPException) as exc_info:
+        await member_service.get_users_in_company(
+            db=AsyncMock(), user_id=1, company_id=1, limit=10, offset=0
+        )
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Company not found"
+
+    mock_get_one.return_value = CompanyModel(id=1, owner_id=2)
+    with pytest.raises(HTTPException) as exc_info:
+        await member_service.get_users_in_company(
+            db=AsyncMock(), user_id=1, company_id=1, limit=10, offset=0
+        )
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.detail == "You do not own company"
+
+    mock_get_one.return_value = CompanyModel(id=1, owner_id=1)
+    mock_get_all_by_filter_pagination.return_value = [
+        MemberModel(id=1, company_id=1, role="member")
+    ]
+    members = await member_service.get_users_in_company(
+        db=AsyncMock(), user_id=1, company_id=1, limit=10, offset=0
+    )
+    assert len(members) == 1
+    assert members[0].id == 1
+    assert members[0].company_id == 1

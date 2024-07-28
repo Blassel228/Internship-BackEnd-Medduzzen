@@ -21,7 +21,7 @@ class UserModel(Base):
     username = Column(String, nullable=False, unique=True)
     hashed_password = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
-    registration_date = Column(DateTime, default=datetime.now())
+    registration_date = Column(DateTime, default=datetime.utcnow)
 
 
 class CompanyModel(Base):
@@ -36,7 +36,7 @@ class CompanyModel(Base):
     description = Column(String, nullable=False)
     visible = Column(Boolean, default=True)
     members = relationship("MemberModel", backref="company", lazy="selectin")
-    registration_date = Column(String, default=str(datetime.now()))
+    registration_date = Column(DateTime, default=datetime.utcnow)
 
 
 class InvitationModel(Base):
@@ -53,7 +53,7 @@ class InvitationModel(Base):
         nullable=False,
     )
     invitation_text = Column(String)
-    registration_date = Column(String, default=str(datetime.now()))
+    registration_date = Column(DateTime, default=datetime.utcnow)
 
 
 class MemberModel(Base):
@@ -69,7 +69,7 @@ class MemberModel(Base):
         nullable=False,
     )
     role = Column(String, nullable=False, default="member")
-    registration_date = Column(String, default=str(datetime.now()))
+    registration_date = Column(DateTime, default=datetime.utcnow)
 
 
 class RequestModel(Base):
@@ -86,7 +86,7 @@ class RequestModel(Base):
         nullable=False,
     )
     request_text = Column(String)
-    registration_date = Column(String, default=str(datetime.now()))
+    registration_date = Column(DateTime, default=datetime.utcnow)
 
 
 class QuizModel(Base):
@@ -104,7 +104,7 @@ class QuizModel(Base):
         lazy="selectin",
     )
     pass_count = Column(Integer, default=0)
-    registration_date = Column(String, default=str(datetime.now()))
+    registration_date = Column(DateTime, default=datetime.utcnow)
 
 
 class QuestionModel(Base):
@@ -157,4 +157,4 @@ class QuizResultModel(Base):
     user = relationship("UserModel", backref="quiz_results")
     company = relationship("CompanyModel", backref="quiz_results")
     quiz = relationship("QuizModel", backref="quiz_results")
-    registration_date = Column(String, default=str(datetime.now()))
+    registration_date = Column(DateTime, default=datetime.utcnow)

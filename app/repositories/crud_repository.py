@@ -2,7 +2,6 @@ import logging
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
-from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
