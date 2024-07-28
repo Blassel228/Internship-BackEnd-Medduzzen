@@ -38,7 +38,7 @@ class InvitationService:
         if company is None:
             raise HTTPException(status_code=404, detail="There is no such a company")
         if company.owner_id != user_id:
-            HTTPException(
+            raise HTTPException(
                 status_code=403,
                 detail="You do not possess the compony to send invitations",
             )
