@@ -67,7 +67,11 @@ async def test_create_quiz_success(
         db_session.flush = AsyncMock()
 
         result = await quiz_service.create(
-            db=db_session, quiz_data=valid_quiz_data, user_id=1, company_id=1
+            db=db_session,
+            quiz_data=valid_quiz_data,
+            user_id=1,
+            company_id=1,
+            notification_text="Hello World",
         )
 
         assert result.name == valid_quiz_data.name
@@ -81,7 +85,7 @@ async def test_create_quiz_success(
 
         assert db_session.add.call_count == expected_add_calls
         assert db_session.commit.call_count == 1
-        assert db_session.flush.call_count == 4
+        assert db_session.flush.call_count == 7
 
 
 @pytest.mark.asyncio
@@ -91,11 +95,7 @@ async def test_create_quiz_success(
 @patch("app.CRUD.question_crud.question_crud.get_all_by_filter")
 @patch("app.CRUD.question_crud.question_crud.delete_all_by_filters")
 @patch("app.CRUD.option_crud.option_crud.delete_all_by_filters")
-@patch("app.CRUD.option_crud.option_crud.add")
-@patch("app.CRUD.question_crud.question_crud.add")
 async def test_update_quiz_success(
-    mock_question_add,
-    mock_option_add,
     mock_option_delete_all_by_filters,
     mock_question_delete_all_by_filters,
     mock_get_all_questions_by_filter,
