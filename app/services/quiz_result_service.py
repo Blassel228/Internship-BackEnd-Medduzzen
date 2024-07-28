@@ -204,7 +204,7 @@ class QuizResultService:
         return result.iterator
 
     async def get_user_quiz_averages_with_time_ranges(
-            self, user_id: int, id_: int, company_id: int, db: AsyncSession
+        self, user_id: int, id_: int, company_id: int, db: AsyncSession
     ):
         member = await member_crud.get_one(id_=user_id, db=db)
         company = await company_crud.get_one(id_=company_id, db=db)
@@ -240,11 +240,7 @@ class QuizResultService:
                     QuizResultModel.company_id == company_id,
                 )
             )
-            .group_by(
-                QuizResultModel.user_id,
-                QuizResultModel.quiz_id,
-                QuizModel.name
-            )
+            .group_by(QuizResultModel.user_id, QuizResultModel.quiz_id, QuizModel.name)
         )
         result = await db.execute(stmt)
         quiz_averages_with_time_ranges = result.fetchall()

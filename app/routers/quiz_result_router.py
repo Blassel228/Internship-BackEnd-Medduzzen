@@ -38,7 +38,7 @@ async def get_all_company_results(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-        return await quiz_result_service.get_all_company_results(
+    return await quiz_result_service.get_all_company_results(
         company_id=company_id, user_id=current_user.id, db=db
     )
 
@@ -129,5 +129,9 @@ async def get_all_company_users_last_attempt(
 
 
 @quiz_result_router.get("/users/{user_id}/average-score")
-async def read_user_average_score(current_user = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    return await quiz_result_service.get_user_average_score(user_id=current_user.id, db=db)
+async def read_user_average_score(
+    current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    return await quiz_result_service.get_user_average_score(
+        user_id=current_user.id, db=db
+    )
