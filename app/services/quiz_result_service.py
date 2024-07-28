@@ -25,7 +25,7 @@ class QuizResultService:
         return results
 
     async def get_all_company_results(
-        self, id_: int, user_id: int, company_id: int, db: AsyncSession
+        self, user_id: int, company_id: int, db: AsyncSession
     ):
         member = await member_crud.get_one(id_=user_id, db=db)
         company = await member_crud.get_one(id_=company_id, db=db)
@@ -35,11 +35,13 @@ class QuizResultService:
                     status_code=403, detail="You have no right to get all users results"
                 )
         if member.role != "admin":
-            company = await company_crud.get_one(id_=member.company_id)
-            if company is None:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of this company."
-                )
+            raise HTTPException(status_code=403, detail="You do not have such rights")
+        company = await company_crud.get_one(id_=member.company_id, db=db)
+        if member.company_id != company.id:
+            raise HTTPException(
+                status_code=403, detail="You are not a member of the company"
+            )
+
         results = await quiz_result_crud.get_all_by_filter(
             db=db, filters={"company_id": company_id}
         )
@@ -56,11 +58,12 @@ class QuizResultService:
                     status_code=403, detail="You have no right to get all users results"
                 )
         if member.role != "admin":
-            company = await company_crud.get_one(id_=member.company_id)
-            if company is None:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of this company."
-                )
+            raise HTTPException(status_code=403, detail="You do not have such rights")
+        company = await company_crud.get_one(id_=member.company_id, db=db)
+        if member.company_id != company.id:
+            raise HTTPException(
+                status_code=403, detail="You are not a member of the company"
+            )
 
         results = await quiz_result_crud.get_all_by_filter(
             db=db, filters={"user_id": id_}
@@ -107,11 +110,13 @@ class QuizResultService:
                 right_answers += 1
 
             user_answers[question.id] = {
-                "provided_option_id": provided_option,
-                "is_correct": option.is_correct,
+                f"provided_option_{question.id}": provided_option,
+                f"is_correct_{question.id}": option.is_correct,
             }
 
-            questions_info[question.id] = {"question_text": question.text}
+            questions_info[question.id] = {
+                f"question_text_{question.id}": question.text
+            }
 
         score = round(right_answers / len(quiz.questions), 2)
         previous_result = await quiz_result_crud.get_one_by_filter(
@@ -136,7 +141,16 @@ class QuizResultService:
                 ),
                 db=db,
             )
-
+        user_answers = {
+            key: value
+            for answer in user_answers.values()
+            for key, value in answer.items()
+        }
+        questions_info = {
+            key: value
+            for answer in questions_info.values()
+            for key, value in answer.items()
+        }
         result_data = {
             "quiz_id": quiz.id,
             "quiz_name": quiz.name,

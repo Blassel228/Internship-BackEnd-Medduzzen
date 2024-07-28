@@ -16,88 +16,98 @@ class RedisService:
         await redis.set(key, data_json, ex=172800)
         await redis.close()
 
-    async def get_from_cache(self, key):
+    async def get_from_cache(
+        self, key: str, user_id: int, db: AsyncSession, company_name: str
+    ):
+        member = await member_crud.get_one(id_=user_id, db=db)
+        company = await company_crud.get_one_by_filter(
+            filters={"name": company_name}, db=db
+        )
+        if company is None:
+            raise HTTPException(status_code=404, detail="There is no such a company")
+        if member is None:
+            if company.owner_id != user_id:
+                raise HTTPException(
+                    status_code=403, detail="You have no right to get all users results"
+                )
+        if member is not None:
+            if member.role != "admin":
+                raise HTTPException(
+                    status_code=403, detail="You do not have such rights"
+                )
+            if member.company_id != company.id:
+                raise HTTPException(
+                    status_code=403, detail="You are not a member of the company"
+                )
+
         redis = await redis_connect()
-        cached_data_json = await redis.get(key)
-        if cached_data_json:
-            return json.loads(cached_data_json)
+        keys = await redis.keys(key)
+        cache = await redis.mget(keys)
+        if cache:
+            parsed_values = [json.loads(value) for value in cache]
+            return parsed_values
         await redis.close()
         return None
 
-    async def admin_get_cache_for_user(self, id_: int, quiz_id: int):
+    async def admin_get_cache_for_user(
+        self, id_: int, quiz_id: int, user_id: int, db: AsyncSession, company_name: str
+    ):
         key = f"quiz_result:{quiz_id}:{id_}:*"
-        return await self.get_from_cache(key)
+        return await self.get_from_cache(
+            key=key, db=db, user_id=user_id, company_name=company_name
+        )
 
-    async def get_cached_result(self, quiz_id: int, user_id: int):
+    async def get_cached_result(
+        self, quiz_id: int, user_id: int, db: AsyncSession, company_name: str
+    ):
         key = f"quiz_result:{quiz_id}:{user_id}:*"
-        return await self.get_from_cache(key)
+        return await self.get_from_cache(
+            key=key, db=db, user_id=user_id, company_name=company_name
+        )
 
     async def user_get_its_result(self, user_id: int):
         key = f"quiz_result:*:{user_id}:*"
-        return await self.get_from_cache(key)
+        redis = await redis_connect()
+        keys = await redis.keys(key)
+        cache = await redis.mget(keys)
+        if cache:
+            parsed_values = [json.loads(value) for value in cache]
+            return parsed_values
 
     async def admin_get_all_cache_by_company_id(
-        self, user_id: int, company_id: int, db: AsyncSession
+        self, user_id: int, company_name: str, db: AsyncSession
     ):
-        member = await member_crud.get_one(id_=user_id, db=db)
-        company = await member_crud.get_one(id_=company_id, db=db)
-        if member is None:
-            if company.owner_id != user_id:
-                raise HTTPException(
-                    status_code=403, detail="You have no right to get all users results"
-                )
-        if member.role != "admin":
-            company = await company_crud.get_one(id_=member.company_id)
-            if company is None:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of this company."
-                )
-        company = await company_crud.get_one(id_=member.company_id)
+        company = await company_crud.get_one_by_filter(
+            filters={"name": company_name}, db=db
+        )
         key = f"quiz_result:*:*:{company.id}"
-        return await self.get_from_cache(key)
+        return await self.get_from_cache(
+            key=key, db=db, user_id=user_id, company_name=company_name
+        )
 
     async def admin_get_all_results_by_quiz_id(
-        self, quiz_id: int, user_id: int, company_id: int, db: AsyncSession
+        self, quiz_id: int, user_id: int, company_name: str, db: AsyncSession
     ):
-        member = await member_crud.get_one(id_=user_id, db=db)
-        company = await member_crud.get_one(id_=company_id, db=db)
-        if member is None:
-            if company.owner_id != user_id:
-                raise HTTPException(
-                    status_code=403, detail="You have no right to get all users results"
-                )
-        if member.role != "admin":
-            company = await company_crud.get_one(id_=member.company_id)
-            if company is None:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of this company."
-                )
-        key = f"quiz_result:{quiz_id}*"
-        return await self.get_from_cache(key)
+        key = f"quiz_result:{quiz_id}:*:*"
+        return await self.get_from_cache(
+            key=key, db=db, user_id=user_id, company_name=company_name
+        )
 
     async def export_cached_results_for_one_user_to_csv(
-        self, user_id: int, id_: int, company_id: int, db: AsyncSession
+        self, user_id: int, id_: int, quiz_id: int, company_name: str, db: AsyncSession
     ):
-        member = await member_crud.get_one(id_=user_id, db=db)
-        company = await member_crud.get_one(id_=company_id, db=db)
-        if member is None:
-            if company.owner_id != user_id:
-                raise HTTPException(
-                    status_code=403, detail="You have no right to get all users results"
-                )
-        if member.role != "admin":
-            company = await company_crud.get_one(id_=member.company_id)
-            if company is None:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of this company."
-                )
 
-        cache = await self.admin_get_cache_for_user(id_=id_)
+        cache = await self.admin_get_cache_for_user(
+            id_=id_, quiz_id=quiz_id, db=db, company_name=company_name, user_id=user_id
+        )
+
+        if cache is None:
+            raise HTTPException(status_code=404, detail="Cache was not found")
 
         headers = []
         row = []
 
-        for key in cache.keys():
+        for key in cache[0].keys():
             headers.append(key)
 
         for user_cache in cache:
@@ -108,27 +118,18 @@ class RedisService:
             writer = csv.writer(file)
             writer.writerow(headers)
             writer.writerow(row)
+        return cache
 
-    async def export_cached_results_to_csv(
-        self, user_id: int, quiz_id: int, company_id: int, db: AsyncSession
+    async def export_all_cached_results_to_csv(
+        self, user_id: int, quiz_id: int, company_name: str, db: AsyncSession
     ):
-        member = await member_crud.get_one(id_=user_id, db=db)
-        company = await member_crud.get_one(id_=company_id, db=db)
-        if member is None:
-            if company.owner_id != user_id:
-                raise HTTPException(
-                    status_code=403, detail="You have no right to get all users results"
-                )
-        if member.role != "admin":
-            company = await company_crud.get_one(id_=member.company_id)
-            if company is None:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of this company."
-                )
 
         cache = await self.admin_get_all_results_by_quiz_id(
-            user_id=user_id, quiz_id=quiz_id, db=db
+            user_id=user_id, quiz_id=quiz_id, db=db, company_name=company_name
         )
+
+        if cache is None:
+            raise HTTPException(status_code=404, detail="Cache was not found")
 
         headers = []
         row = []
@@ -137,13 +138,28 @@ class RedisService:
             headers.append(key)
 
         with open("cache.csv", "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(headers)
             for user in cache:
                 for user_data in user.values():
                     row.append(user_data)
-                    writer = csv.writer(file)
-                    writer.writerow(headers)
-                    writer.writerow(row)
-                    row = []
+                writer.writerow(row)
+                row = []
+
+        return cache
+
+    async def get(self, key):
+        redis = await redis_connect()
+        res = await redis.get(key)
+        await redis.close()
+        return res
+
+    async def delete(self, key):
+        redis = await redis_connect()
+        res = await redis.get(key)
+        await redis.delete(key)
+        await redis.close()
+        return res
 
 
 redis_service = RedisService()

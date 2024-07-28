@@ -20,6 +20,29 @@ async def delete(id_: int, db: AsyncSession = Depends(get_db)):
     return await quiz_result_crud.delete(id_=id_, db=db)
 
 
+@quiz_result_router.delete("/get_results_for_user")
+async def get_results_for_user(
+    id_: int,
+    company_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return await quiz_result_crud.get_results_for_user(
+        id_=id_, company_id=company_id, user_id=current_user.id, db=db
+    )
+
+
+@quiz_result_router.delete("/get_all_company_results")
+async def get_all_company_results(
+    company_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return await quiz_result_crud.get_all_company_results(
+        company_id=company_id, user_id=current_user.id, db=db
+    )
+
+
 @quiz_result_router.post("/pass_quiz")
 async def pass_quiz(
     data: QuizResultCreateInSchema,
