@@ -116,3 +116,9 @@ class QuizResultCreateSchema(BaseModel):
 class QuizResultUpdateSchema(BaseModel):
     score: float
     registration_date: str
+
+
+class NotificationCreate(BaseModel):
+    user_id: int
+    quiz_id: int
+    text: str

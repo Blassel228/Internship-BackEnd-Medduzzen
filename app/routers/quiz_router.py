@@ -20,13 +20,18 @@ async def get_all_pagination(
 
 @quiz_router.post("/create")
 async def create(
+    notification_text: str,
     company_id: int,
     quiz_data: QuizCreateSchema,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     return await quiz_service.create(
-        db=db, quiz_data=quiz_data, user_id=current_user.id, company_id=company_id
+        db=db,
+        quiz_data=quiz_data,
+        user_id=current_user.id,
+        company_id=company_id,
+        notification_text=notification_text,
     )
 
 

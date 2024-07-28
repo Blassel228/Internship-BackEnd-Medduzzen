@@ -7,6 +7,7 @@ from app.CRUD.question_crud import question_crud
 from app.schemas.schemas import QuizCreateSchema
 from app.db.models.models import QuizModel, QuestionModel, OptionModel
 from fastapi import HTTPException
+from app.services.notification_service import notification_service
 
 
 class QuizService:
@@ -15,6 +16,7 @@ class QuizService:
         db: AsyncSession,
         user_id: int,
         company_id: int,
+        notification_text: str,
         quiz_data: QuizCreateSchema,
     ):
         try:
@@ -32,6 +34,7 @@ class QuizService:
                 )
 
             new_quiz = QuizModel(
+                id=quiz_data.id,
                 company_id=company_id,
                 name=quiz_data.name,
                 description=quiz_data.description,
@@ -59,7 +62,14 @@ class QuizService:
                         question_id=new_question.id,
                     )
                     db.add(new_option)
-            await db.flush()
+                    await db.flush()
+            await db.refresh(new_quiz)
+            await notification_service.notify_users(
+                company_id=company_id,
+                quiz_id=quiz_data.id,
+                notification_text=notification_text,
+                db=db,
+            )
             await db.commit()
             return new_quiz
         except Exception as e:
