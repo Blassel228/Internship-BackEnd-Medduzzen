@@ -1,6 +1,7 @@
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas.schemas import UserCreateSchema, UserUpdateSchema, UserUpdateInSchema
+from app.schemas.schemas import UserCreateSchema, UserUpdateSchema
+from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from app.utils.deps import pwd_context
 from app.repositories.crud_repository import CrudRepository
@@ -47,14 +48,20 @@ class UserCrud(CrudRepository):
                 status_code=500, detail="Something went wrong when adding a user"
             )
 
-    async def user_update(self, id_: int, data: UserUpdateInSchema, db: AsyncSession):
+    async def user_update(self, id_: int, data: UserUpdateSchema, db: AsyncSession):
+        res = await self.get_one(id_=id_, db=db)
+        if res is None:
+            raise HTTPException(status_code=404, detail="User was not found")
         data = data.model_dump()
-        hashed_password = pwd_context.hash(data.pop("password"))
-        data["hashed_password"] = hashed_password
+        data["hashed_password"] = pwd_context.hash(data.pop("password"))
         try:
-            res = await self.update(id_=id_, data=UserUpdateSchema(**data), db=db)
+            stmt = update(self.model).values(**data).where(self.model.id == id_)
+            await db.execute(stmt)
+            res = await self.get_one(id_=data["id"], db=db)
             if res is None:
                 raise HTTPException(status_code=404, detail="User is not valid")
+            await db.commit()
+
             return res
         except HTTPException as e:
             raise e

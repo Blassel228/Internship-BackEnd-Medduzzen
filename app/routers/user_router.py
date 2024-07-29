@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.CRUD.user_crud import user_crud
 from app.utils.deps import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas.schemas import UserCreateSchema, UserUpdateInSchema
+from app.schemas.schemas import UserCreateSchema, UserUpdateSchema
 from fastapi import Depends
 
 user_router = APIRouter(prefix="/user", tags=["User"])
@@ -24,9 +24,7 @@ async def add(data: UserCreateSchema, db: AsyncSession = Depends(get_db)):
 
 
 @user_router.put("/")
-async def update(
-    id_: int, data: UserUpdateInSchema, db: AsyncSession = Depends(get_db)
-):
+async def update(id_: int, data: UserUpdateSchema, db: AsyncSession = Depends(get_db)):
     return await user_crud.user_update(id_=id_, data=data, db=db)
 
 

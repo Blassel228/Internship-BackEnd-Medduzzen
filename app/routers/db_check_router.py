@@ -1,5 +1,6 @@
 from fastapi.responses import JSONResponse
-from app.db.base import redis_connect, engine
+from app.db.base import redis_connect
+from app.db.models.models import engine
 from fastapi import APIRouter
 import logging
 
