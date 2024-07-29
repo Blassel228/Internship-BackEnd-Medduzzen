@@ -32,7 +32,6 @@ class QuizService:
                 raise HTTPException(
                     status_code=400, detail="A quiz must have at least two questions."
                 )
-
             new_quiz = QuizModel(
                 id=quiz_data.id,
                 company_id=company_id,

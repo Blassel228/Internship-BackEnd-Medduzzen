@@ -118,7 +118,7 @@ class QuizResultUpdateSchema(BaseModel):
     registration_date: str
 
 
-class NotificationCreate(BaseModel):
+class NotificationCreateSchema(BaseModel):
     user_id: int
     quiz_id: int
     text: str

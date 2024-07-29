@@ -29,3 +29,8 @@ async def mark_as_read(
     return await notification_service.mark_as_read(
         id_=id_, user_id=current_user.id, db=db
     )
+
+
+@notification_router.put("/pass_check")
+async def pass_check(text: str, db: AsyncSession = Depends(get_db)):
+    return await notification_service.pass_check(text=text, db=db)

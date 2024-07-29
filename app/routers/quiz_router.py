@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-
 from app.CRUD.quiz_crud import quiz_crud
 from app.services.quiz_service import quiz_service
 from app.utils.deps import get_db, get_current_user
@@ -18,6 +17,24 @@ async def get_all_pagination(
     return await quiz_crud.get_all_pagination(db=db, limit=limit, offset=offset)
 
 
+@quiz_router.put("/update")
+async def update(
+    id_: int,
+    data: QuizCreateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return await quiz_service.update(db=db, data=data, user_id=current_user.id, id_=id_)
+
+
+@quiz_router.delete("/delete")
+async def update(
+    id_: int,
+    db: AsyncSession = Depends(get_db),
+):
+    return await quiz_crud.delete(db=db, id_=id_)
+
+
 @quiz_router.post("/create")
 async def create(
     notification_text: str,
@@ -33,16 +50,6 @@ async def create(
         company_id=company_id,
         notification_text=notification_text,
     )
-
-
-@quiz_router.put("/update")
-async def update(
-    id_: int,
-    data: QuizCreateSchema,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    return await quiz_service.update(db=db, data=data, user_id=current_user.id, id_=id_)
 
 
 @quiz_router.get("/get_one")
