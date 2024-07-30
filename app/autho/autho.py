@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Annotated
 from fastapi import status
 from passlib.context import CryptContext
-from app.db.models import UserModel
+from app.db.models.models import UserModel
 from app.utils.deps import get_db
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
