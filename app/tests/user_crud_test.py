@@ -1,17 +1,15 @@
 import pytest
 from app.db.models.models import UserModel
 from app.CRUD.user_crud import UserCrud
-from app.schemas.schemas import UserCreateSchema, UserUpdateInSchema
+from app.schemas.schemas import UserCreateSchema, UserUpdateSchema
 from app.tests.conftest import get_db_fixture
 from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi import HTTPException
 from app.utils.deps import pwd_context
 
-
 @pytest.fixture
 def user_crud():
     return UserCrud(UserModel)
-
 
 @pytest.mark.asyncio
 async def test_get_all(user_crud, get_db_fixture):
@@ -30,7 +28,6 @@ async def test_get_all(user_crud, get_db_fixture):
         assert users[0].username == "user1"
         assert users[1].username == "user2"
 
-
 @pytest.mark.asyncio
 async def test_get_one_success(user_crud, get_db_fixture):
     mock_user = UserModel(id=1, username="user1", email="user1@example.com")
@@ -40,7 +37,6 @@ async def test_get_one_success(user_crud, get_db_fixture):
         db_session.scalar.assert_called_once()
         assert user.id == 1
         assert user.username == "user1"
-
 
 @pytest.mark.asyncio
 async def test_get_one_not_found(user_crud, get_db_fixture):
@@ -140,18 +136,25 @@ async def test_user_update_success(mock_update, user_crud, get_db_fixture):
         "password": "new_password",
         "email": "updated@example.com",
     }
-    user_update_schema = UserUpdateInSchema(**user_data)
-    hashed_password = pwd_context.hash(user_data.pop("password"))
-    mock_user = UserModel(**user_data, hashed_password=hashed_password)
+    user_update_schema = UserUpdateSchema(**user_data)
+    hashed_password = pwd_context.hash(user_data["password"])
+    mock_user = UserModel(
+        id=user_data["id"],
+        username=user_data["username"],
+        email=user_data["email"],
+        hashed_password=hashed_password,
+    )
+
     async for db_session in get_db_fixture:
         mock_update.return_value = mock_user
-        result = await user_crud.user_update(
-            id_=1, data=user_update_schema, db=db_session
-        )
+        result = await user_crud.update(id_=1, data=user_update_schema, db=db_session)
         assert result.id == 1
         assert result.username == "updated_user"
         assert result.email == "updated@example.com"
-        mock_update.assert_called_once()
+
+        mock_update.assert_called_once_with(
+            id_=1, db=db_session, data=user_update_schema
+        )
 
 
 @pytest.mark.asyncio
@@ -167,7 +170,7 @@ async def test_user_update_not_found(
         "password": "new_password",
         "email": "updated@example.com",
     }
-    user_update_schema = UserUpdateInSchema(**user_data)
+    user_update_schema = UserUpdateSchema(**user_data)
 
     async for db_session in get_db_fixture:
         mock_update.return_value = None
@@ -177,5 +180,5 @@ async def test_user_update_not_found(
             await user_crud.user_update(id_=1, data=user_update_schema, db=db_session)
 
         assert exc_info.value.status_code == 404
-        assert exc_info.value.detail == "User is not valid"
+        assert exc_info.value.detail == "User was not found"
         mock_logger.error.assert_not_called()

@@ -24,14 +24,6 @@ def health_check():
     return {"status_code": 200, "detail": "ok", "result": "healthy"}
 
 
-@app.get("/error")
-async def trigger_error():
-    try:
-        1 / 0
-    except ZeroDivisionError as e:
-        logger.exception("An error occurred: %s", e)
-        raise e
-
 
 if __name__ == "__main__":
     uvicorn.run(

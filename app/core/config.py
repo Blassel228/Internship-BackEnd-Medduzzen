@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     redis_host: str
     redis_port: int
-    redis_pass: str
+    redis_password: str
 
     algorithm: str
     secret: str
@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     domain: str
     api_audience: str
     issuer: str
+
+    cors_origins: list[str] = ["http://127.0.0.1:8000", "http://0.0.0.0:8000"]
 
     @property
     def postgres_url(self) -> str:

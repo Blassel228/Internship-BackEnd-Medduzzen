@@ -8,7 +8,6 @@ class UserCreateSchema(BaseModel):
     password: str
     email: EmailStr
 
-
 class UserUpdateInSchema(BaseModel):
     id: int
     username: str

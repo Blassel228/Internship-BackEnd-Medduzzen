@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class CrudRepository:
-    def __init__(self, model):
+    def __init__(self, model ):
         self.model = model
 
     async def get_all(self, db: AsyncSession):
@@ -33,7 +33,6 @@ class CrudRepository:
             raise HTTPException(status_code=500, detail="Failed to add entity")
 
     async def update(self, id_: int, data: BaseModel, db: AsyncSession):
-
         stmt = (
             update(self.model).values(**data.model_dump()).where(self.model.id == id_)
         )
