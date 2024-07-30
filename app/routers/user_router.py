@@ -26,13 +26,13 @@ async def add(data: UserCreateSchema, db: AsyncSession = Depends(get_db)):
 
 @user_router.put("/")
 async def update(
-    id_: int, data: UserUpdateSchema, db: AsyncSession = Depends(get_db)
+    id_: int, data: UserUpdateInSchema, db: AsyncSession = Depends(get_db)
 ):
     return await user_crud.user_update(id_=id_, data=data, db=db)
 
 
-@user_router.delete("/self_delete")
-async def self_delete(id_: int, db: AsyncSession = Depends(get_db)):
+@user_router.delete("/delete")
+async def delete(id_: int, db: AsyncSession = Depends(get_db)):
     return await user_crud.delete(id_=id_, db=db)
 
 

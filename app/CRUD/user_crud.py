@@ -1,6 +1,6 @@
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas.schemas import UserCreateSchema, UserUpdateSchema
+from app.schemas.schemas import UserCreateSchema, UserUpdateSchema, UserUpdateInSchema
 from sqlalchemy.dialects.postgresql import insert
 from app.utils.deps import pwd_context
 from app.repositories.crud_repository import CrudRepository
@@ -47,7 +47,7 @@ class UserCrud(CrudRepository):
                 status_code=500, detail="Something went wrong when adding a user"
             )
 
-    async def user_update(self, id_: int, data: UserUpdateSchema, db: AsyncSession):
+    async def user_update(self, id_: int, data: UserUpdateInSchema, db: AsyncSession):
         res = await self.get_one(id_=id_, db=db)
         if res is None:
             raise HTTPException(status_code=404, detail="User was not found")
