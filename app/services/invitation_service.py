@@ -15,12 +15,13 @@ class InvitationService:
             raise HTTPException(status_code=404, detail="Such a company does not exist")
         if user_id != company.owner_id:
             raise HTTPException(
-                status_code=403, detail="You do not own the company to get the requests"
+                status_code=403,
+                detail="You do not own the company to get the invitations",
             )
-        requests = await invitation_crud.get_all_by_filter(
+        invitations = await invitation_crud.get_all_by_filter(
             filters={"company_id": company_id}, db=db
         )
-        return requests
+        return invitations
 
     async def send_invitation(
         self, user_id: int, data: InvitationCreateSchema, db: AsyncSession
@@ -28,7 +29,7 @@ class InvitationService:
         invitation = await invitation_crud.get_one(id_=data.id, db=db)
         if invitation is not None:
             raise HTTPException(
-                status_code=403, detail="Such an invitation already exists"
+                status_code=409, detail="Such an invitation already exists"
             )
         if data.recipient_id == user_id:
             raise HTTPException(
@@ -40,13 +41,13 @@ class InvitationService:
         if company.owner_id != user_id:
             raise HTTPException(
                 status_code=403,
-                detail="You do not possess the compony to send invitations",
+                detail="You do not own the company to send invitations",
             )
         member = await member_crud.get_one(id_=data.recipient_id, db=db)
         if member is not None:
             if member.company_id == data.company_id:
                 raise HTTPException(
-                    status_code=404, detail="The user is in your company already"
+                    status_code=400, detail="The user is in your company already"
                 )
         invitation = await invitation_crud.add(data=data, db=db)
         return invitation
@@ -57,11 +58,11 @@ class InvitationService:
         invitation = await invitation_crud.get_one(id_=id_, db=db)
         if invitation is None:
             raise HTTPException(
-                status_code=403, detail="Such an invitation does not exist"
+                status_code=404, detail="Such an invitation does not exist"
             )
         company = await company_crud.get_one(id_=invitation.company_id, db=db)
         if company.owner_id != user_id:
-            HTTPException(
+            raise HTTPException(
                 status_code=403,
                 detail="You do not possess the compony to delete invitations",
             )
@@ -75,11 +76,11 @@ class InvitationService:
         invitation = await invitation_crud.get_one(id_=id_, db=db)
         if invitation is None:
             raise HTTPException(
-                status_code=409, detail="The invitation with such an id does not exist"
+                status_code=404, detail="The invitation with such an id does not exist"
             )
         if invitation.recipient_id != user_id:
             raise HTTPException(
-                status_code=404, detail="You do not have such an invitation to accept"
+                status_code=409, detail="You do not have such an invitation to accept"
             )
         company = await company_crud.get_one(id_=invitation.company_id, db=db)
         member = await member_crud.add(

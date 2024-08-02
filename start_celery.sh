@@ -13,7 +13,6 @@ echo "Starting Uvicorn server..."
 uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 UVICORN_PID=$!
 
-# Function to stop all services
 function stop_services() {
     echo "Stopping Uvicorn server..."
     kill $UVICORN_PID
@@ -23,11 +22,8 @@ function stop_services() {
     kill $WORKER_PID
 }
 
-# Trap SIGTERM and SIGINT to stop services
 trap stop_services SIGTERM SIGINT
 
-# Wait for all services to stop
 wait $UVICORN_PID
-#wait $FLOWER_PID
 wait $BEAT_PID
 wait $WORKER_PID

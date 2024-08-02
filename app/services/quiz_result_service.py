@@ -190,9 +190,9 @@ class QuizResultService:
                 QuizResultModel.user_id == user_id
             )
         )
-        if result is None:
-            raise HTTPException(status_code=404, detail="You have no results")
         avg_score = result.scalar()
+        if avg_score is None:
+            raise HTTPException(status_code=404, detail="You have no results")
         return avg_score
 
     async def get_average_score_for_all(self, db: AsyncSession, company_id: int):

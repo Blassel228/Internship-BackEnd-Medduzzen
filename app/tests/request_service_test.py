@@ -290,3 +290,132 @@ async def test_accept_request_errors(
             excinfo.value.detail
             == "You can not accept the request as you are not the owner"
         )
+
+
+@pytest.mark.asyncio
+@patch("app.CRUD.request_crud.request_crud.get_one")
+@patch("app.CRUD.company_crud.company_crud.get_one")
+@patch("app.CRUD.request_crud.request_crud.delete")
+async def test_reject_request_success(
+    mock_delete, mock_get_company, mock_get_request, get_db_fixture, request_service
+):
+    request_service = await request_service
+
+    user_id = 1
+    request_id = 1
+    company_id = 1
+
+    mock_request = RequestModel(
+        id=request_id, company_id=company_id, request_text="Test request"
+    )
+    mock_company = CompanyModel(id=company_id, owner_id=user_id)
+
+    mock_get_request.return_value = mock_request
+    mock_get_company.return_value = mock_company
+    mock_delete.return_value = None
+
+    async for session in get_db_fixture:
+        result = await request_service.reject_request(
+            id_=request_id, user_id=user_id, db=session
+        )
+
+        assert result.id == request_id
+        assert result.company_id == company_id
+        assert result.request_text == "Test request"
+        mock_delete.assert_called_once_with(id_=request_id, db=session)
+
+
+@pytest.mark.asyncio
+@patch("app.CRUD.request_crud.request_crud.get_one")
+@patch("app.CRUD.company_crud.company_crud.get_one")
+async def test_reject_request_request_errors(
+    mock_get_company, mock_get_request, get_db_fixture, request_service
+):
+    request_service = await request_service
+    user_id = 1
+    request_id = 1
+    company_id = 1
+
+    mock_get_company.return_value = CompanyModel(id=company_id, owner_id=user_id + 1)
+
+    mock_get_request.return_value = None
+
+    async for session in get_db_fixture:
+        with pytest.raises(HTTPException) as excinfo:
+            await request_service.reject_request(
+                id_=request_id, user_id=user_id, db=session
+            )
+
+        assert excinfo.value.status_code == 404
+        assert excinfo.value.detail == "The request with such an id does not exist"
+
+        mock_request = RequestModel(
+            id=request_id, company_id=company_id, request_text="Test request"
+        )
+        mock_get_request.return_value = mock_request
+
+        with pytest.raises(HTTPException) as excinfo:
+            await request_service.reject_request(
+                id_=request_id, user_id=user_id, db=session
+            )
+
+        assert excinfo.value.status_code == 403
+        assert (
+            excinfo.value.detail == "You do not own the company to reject the request"
+        )
+
+
+@pytest.mark.asyncio
+@patch("app.CRUD.request_crud.request_crud.get_one")
+@patch("app.CRUD.request_crud.request_crud.delete")
+async def test_user_delete_its_request_success(
+    mock_delete, mock_get_one, get_db_fixture, request_service
+):
+    request_service = await request_service
+
+    user_id = 1
+    request_id = 1
+
+    async for db in get_db_fixture:
+        mock_get_one.return_value = RequestModel(
+            id=request_id, sender_id=user_id, request_text="Test request"
+        )
+        mock_delete.return_value = RequestModel(
+            id=request_id, sender_id=user_id, request_text="Test request"
+        )
+
+        result = await request_service.user_delete_its_request(
+            id_=request_id, user_id=user_id, db=db
+        )
+        assert result.id == request_id
+        assert result.sender_id == user_id
+
+
+@pytest.mark.asyncio
+@patch("app.CRUD.request_crud.request_crud.get_one")
+async def test_user_delete_its_request(mock_get_one, get_db_fixture, request_service):
+    request_service = await request_service
+
+    user_id = 1
+    request_id = 1
+
+    async for db in get_db_fixture:
+        mock_get_one.return_value = None
+
+        with pytest.raises(HTTPException) as excinfo:
+            await request_service.user_delete_its_request(
+                id_=request_id, user_id=user_id, db=db
+            )
+        assert excinfo.value.status_code == 404
+        assert excinfo.value.detail == "The request with such an id does not exist"
+
+        mock_get_one.return_value = RequestModel(
+            id=request_id, sender_id=user_id + 1, request_text="Test request"
+        )
+
+        with pytest.raises(HTTPException) as excinfo:
+            await request_service.user_delete_its_request(
+                id_=request_id, user_id=user_id, db=db
+            )
+        assert excinfo.value.status_code == 403
+        assert excinfo.value.detail == "You did not send request with such an id"

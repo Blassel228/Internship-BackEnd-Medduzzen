@@ -1,5 +1,7 @@
+from datetime import datetime
+from sqlalchemy.engine.row import Row
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock, MagicMock
 from app.schemas.schemas import QuizResultCreateInSchema, QuizResultCreateSchema
 from app.db.models.models import (
     QuizModel,
@@ -17,6 +19,266 @@ from fastapi import HTTPException
 @pytest.fixture
 async def quiz_result_service():
     return QuizResultService()
+
+
+@pytest.mark.asyncio
+@patch("app.CRUD.quiz_result_crud.quiz_result_crud.get_all_by_filter")
+async def test_user_get_its_result_success(
+    mock_get_all_by_filter, quiz_result_service, get_db_fixture
+):
+    quiz_result_service = await quiz_result_service
+    user_id = 1
+
+    async for db_session in get_db_fixture:
+        mock_results = [
+            QuizResultModel(id=1, user_id=user_id, score=85),
+            QuizResultModel(id=2, user_id=user_id, score=90),
+        ]
+        mock_get_all_by_filter.return_value = mock_results
+
+        result = await quiz_result_service.user_get_its_result(
+            user_id=user_id, db=db_session
+        )
+
+        assert result == mock_results
+        mock_get_all_by_filter.assert_awaited_once_with(
+            db=db_session, filters={"user_id": user_id}
+        )
+
+
+@pytest.mark.asyncio
+@patch("app.CRUD.quiz_result_crud.quiz_result_crud.get_all_by_filter")
+@patch("app.CRUD.member_crud.member_crud.get_one")
+@patch("app.CRUD.company_crud.company_crud.get_one")
+async def test_get_all_company_results_success(
+    mock_get_company,
+    mock_get_member,
+    mock_get_results,
+    quiz_result_service,
+    get_db_fixture,
+):
+    quiz_result_service = await quiz_result_service
+    mock_get_company.return_value = CompanyModel(
+        id=1, owner_id=1, name="Test Company", description="Test Description"
+    )
+    mock_get_member.return_value = MemberModel(id=1, company_id=1, role="admin")
+    mock_get_results.return_value = [
+        QuizResultCreateSchema(id=1, quiz_id=1, company_id=1, score=0.9, user_id=1),
+        QuizResultCreateSchema(id=2, quiz_id=1, company_id=1, score=0.8, user_id=2),
+    ]
+
+    async for db in get_db_fixture:
+        results = await quiz_result_service.get_all_company_results(
+            user_id=1, company_id=1, db=db
+        )
+        assert len(results) == 2
+        assert results[0].id == 1
+        assert results[1].id == 2
+
+        mock_get_company.assert_called_once_with(id_=1, db=db)
+        mock_get_member.assert_called_once_with(id_=1, db=db)
+        mock_get_results.assert_called_once_with(db=db, filters={"company_id": 1})
+
+
+@pytest.mark.asyncio
+@patch("app.CRUD.quiz_result_crud.quiz_result_crud.get_all_by_filter")
+@patch("app.CRUD.member_crud.member_crud.get_one")
+@patch("app.CRUD.company_crud.company_crud.get_one")
+async def test_get_all_company_results_errors(
+    mock_get_company,
+    mock_get_member,
+    mock_get_results,
+    quiz_result_service,
+    get_db_fixture,
+):
+    quiz_result_service = await quiz_result_service
+    mock_get_company.return_value = None
+    async for db in get_db_fixture:
+        with pytest.raises(HTTPException) as excinfo:
+            await quiz_result_service.get_all_company_results(
+                user_id=1, company_id=1, db=db
+            )
+        assert excinfo.value.status_code == 404
+        assert excinfo.value.detail == "There is no such a company"
+    mock_get_company.reset_mock()
+
+    mock_get_company.return_value = CompanyModel(
+        id=1, owner_id=2, name="Test Company", description="Test Description"
+    )
+    mock_get_member.return_value = None
+    async for db in get_db_fixture:
+        with pytest.raises(HTTPException) as excinfo:
+            await quiz_result_service.get_all_company_results(
+                user_id=1, company_id=1, db=db
+            )
+        assert excinfo.value.status_code == 403
+        assert excinfo.value.detail == "You have no right to get all users results"
+    mock_get_company.reset_mock()
+    mock_get_member.reset_mock()
+
+    mock_get_company.return_value = CompanyModel(
+        id=1, owner_id=1, name="Test Company", description="Test Description"
+    )
+    mock_get_member.return_value = MemberModel(id=1, company_id=1, role="member")
+    async for db in get_db_fixture:
+        with pytest.raises(HTTPException) as excinfo:
+            await quiz_result_service.get_all_company_results(
+                user_id=1, company_id=1, db=db
+            )
+        assert excinfo.value.status_code == 403
+        assert excinfo.value.detail == "You do not have such rights"
+    mock_get_company.reset_mock()
+    mock_get_member.reset_mock()
+
+    mock_get_company.return_value = CompanyModel(
+        id=1, owner_id=1, name="Test Company", description="Test Description"
+    )
+    mock_get_member.return_value = MemberModel(id=2, company_id=2, role="admin")
+    async for db in get_db_fixture:
+        with pytest.raises(HTTPException) as excinfo:
+            await quiz_result_service.get_all_company_results(
+                user_id=1, company_id=1, db=db
+            )
+        assert excinfo.value.status_code == 403
+        assert excinfo.value.detail == "You are not a member of the company"
+    mock_get_company.reset_mock()
+    mock_get_member.reset_mock()
+    mock_get_results.reset_mock()
+
+
+@pytest.mark.asyncio
+@patch("app.CRUD.quiz_result_crud.quiz_result_crud.get_all_by_filter")
+@patch("app.CRUD.company_crud.company_crud.get_one")
+@patch("app.CRUD.member_crud.member_crud.get_one")
+async def test_get_results_for_user_success(
+    mock_get_one_member,
+    mock_get_one_company,
+    mock_get_all_by_filter,
+    get_db_fixture,
+    quiz_result_service,
+):
+    user_id = 1
+    company_id = 1
+    result_id = 1
+    quiz_result_service = await quiz_result_service
+    quiz_results = [
+        QuizResultModel(
+            id=1, quiz_id=1, company_id=company_id, score=0.75, user_id=user_id
+        )
+    ]
+
+    mock_get_one_company.return_value = CompanyModel(
+        id=company_id, owner_id=user_id, name="Test Company"
+    )
+    mock_get_one_member.return_value = MemberModel(
+        id=user_id, company_id=company_id, role="admin"
+    )
+    mock_get_all_by_filter.return_value = quiz_results
+
+    async for db in get_db_fixture:
+        results = await quiz_result_service.get_results_for_user(
+            user_id=user_id, id_=result_id, company_id=company_id, db=db
+        )
+
+        assert results == quiz_results
+        assert len(results) == 1
+        assert results[0].id == 1
+        assert results[0].quiz_id == 1
+        assert results[0].company_id == company_id
+        assert results[0].score == 0.75
+        assert results[0].user_id == user_id
+
+        mock_get_one_company.assert_called_once_with(id_=company_id, db=db)
+        mock_get_one_member.assert_called_once_with(id_=user_id, db=db)
+        mock_get_all_by_filter.assert_called_once_with(
+            db=db, filters={"user_id": result_id}
+        )
+
+
+@pytest.mark.asyncio
+@patch("app.CRUD.quiz_result_crud.quiz_result_crud.get_all_by_filter")
+@patch("app.CRUD.company_crud.company_crud.get_one")
+@patch("app.CRUD.member_crud.member_crud.get_one")
+async def test_get_results_for_user_error(
+    mock_get_one_member,
+    mock_get_one_company,
+    mock_get_all_by_filter,
+    get_db_fixture,
+    quiz_result_service,
+):
+    user_id = 1
+    company_id = 1
+    result_id = 1
+    quiz_results = [
+        QuizResultModel(
+            id=1, quiz_id=1, company_id=company_id, score=0.75, user_id=user_id
+        )
+    ]
+    quiz_result_service = await quiz_result_service
+
+    mock_get_one_company.return_value = None
+    async for db in get_db_fixture:
+        with pytest.raises(HTTPException) as exc_info:
+            await quiz_result_service.get_results_for_user(
+                user_id=user_id, id_=result_id, company_id=company_id, db=db
+            )
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == "There is no such a company"
+
+    mock_get_one_company.return_value = CompanyModel(
+        id=company_id, owner_id=user_id, name="Test Company"
+    )
+
+    mock_get_one_member.return_value = None
+    async for db in get_db_fixture:
+        with pytest.raises(HTTPException) as exc_info:
+            await quiz_result_service.get_results_for_user(
+                user_id=user_id, id_=result_id, company_id=company_id, db=db
+            )
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail == "You have no right to get all users results"
+
+    mock_get_one_member.return_value = MemberModel(
+        id=user_id, company_id=company_id, role="member"
+    )
+
+    async for db in get_db_fixture:
+        with pytest.raises(HTTPException) as exc_info:
+            await quiz_result_service.get_results_for_user(
+                user_id=user_id, id_=result_id, company_id=company_id, db=db
+            )
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail == "You do not have such rights"
+
+    mock_get_one_member.return_value = MemberModel(
+        id=user_id, company_id=company_id, role="admin"
+    )
+
+    mock_get_one_member.return_value = MemberModel(
+        id=user_id, company_id=2, role="admin"
+    )
+    async for db in get_db_fixture:
+        with pytest.raises(HTTPException) as exc_info:
+            await quiz_result_service.get_results_for_user(
+                user_id=user_id, id_=result_id, company_id=company_id, db=db
+            )
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail == "You are not a member of the company"
+
+    mock_get_one_member.return_value = MemberModel(
+        id=user_id, company_id=company_id, role="admin"
+    )
+
+    mock_get_all_by_filter.return_value = quiz_results
+    async for db in get_db_fixture:
+        results = await quiz_result_service.get_results_for_user(
+            user_id=user_id, id_=result_id, company_id=company_id, db=db
+        )
+        assert results == quiz_results
+
+        mock_get_all_by_filter.assert_called_once_with(
+            db=db, filters={"user_id": result_id}
+        )
 
 
 @pytest.mark.asyncio
@@ -245,199 +507,53 @@ async def test_pass_quiz_errors(
 
 
 @pytest.mark.asyncio
-@patch("app.CRUD.quiz_result_crud.quiz_result_crud.get_all_by_filter")
 @patch("app.CRUD.company_crud.company_crud.get_one")
-@patch("app.CRUD.member_crud.member_crud.get_one")
-async def test_get_results_for_user_success(
-        mock_get_one_member,
-        mock_get_one_company,
-        mock_get_all_by_filter,
-        get_db_fixture,
-        quiz_result_service,
+async def test_get_average_score_for_company(
+    mock_get_one, get_db_fixture, quiz_result_service
 ):
-    user_id = 1
+    quiz_result_service = await quiz_result_service
     company_id = 1
-    result_id = 1
-    quiz_result_service = await  quiz_result_service
-    quiz_results = [QuizResultModel(id=1, quiz_id=1, company_id=company_id, score=0.75, user_id=user_id)]
+    mock_get_one.return_value = {"id": company_id}
 
-    mock_get_one_company.return_value = CompanyModel(id=company_id, owner_id=user_id, name="Test Company")
-    mock_get_one_member.return_value = MemberModel(id=user_id, company_id=company_id, role="admin")
-    mock_get_all_by_filter.return_value = quiz_results
+    mock_db_result = [(1, 80.0), (2, 90.0)]
 
-    async for db in get_db_fixture:
-        results = await quiz_result_service.get_results_for_user(user_id=user_id, id_=result_id, company_id=company_id,
-                                                                 db=db)
+    async def mock_execute(stmt):
+        class MockResult:
+            def __init__(self, result):
+                self.result = result
 
-        assert results == quiz_results
-        assert len(results) == 1
-        assert results[0].id == 1
-        assert results[0].quiz_id == 1
-        assert results[0].company_id == company_id
-        assert results[0].score == 0.75
-        assert results[0].user_id == user_id
+            def iterator(self):
+                return iter(self.result)
 
-        mock_get_one_company.assert_called_once_with(id_=company_id, db=db)
-        mock_get_one_member.assert_called_once_with(id_=user_id, db=db)
-        mock_get_all_by_filter.assert_called_once_with(db=db, filters={"user_id": result_id})
+        return MockResult(mock_db_result)
+
+    async for session in get_db_fixture:
+        session.execute.side_effect = mock_execute
+        result = await quiz_result_service.get_average_score_for_company(
+            db=session, company_id=company_id
+        )
+        result_list = list(result())
+        assert result_list == mock_db_result
+        mock_get_one.assert_called_once_with(id_=company_id, db=session)
 
 
 @pytest.mark.asyncio
-@patch("app.CRUD.quiz_result_crud.quiz_result_crud.get_all_by_filter")
 @patch("app.CRUD.company_crud.company_crud.get_one")
-@patch("app.CRUD.member_crud.member_crud.get_one")
-async def test_get_results_for_user_error(
-    mock_get_one_member,
-    mock_get_one_company,
-    mock_get_all_by_filter,
-    get_db_fixture,
-    quiz_result_service,
+async def test_get_average_score_for_company_not_found(
+    mock_get_one, quiz_result_service, get_db_fixture
 ):
-    user_id = 1
-    company_id = 1
-    result_id = 1
-    quiz_results = [
-        QuizResultModel(
-            id=1, quiz_id=1, company_id=company_id, score=0.75, user_id=user_id
-        )
-    ]
     quiz_result_service = await quiz_result_service
+    company_id = 1
 
-    mock_get_one_company.return_value = None
-    async for db in get_db_fixture:
+    mock_get_one.return_value = None
+
+    async for db_session in get_db_fixture:
         with pytest.raises(HTTPException) as exc_info:
-            await quiz_result_service.get_results_for_user(
-                user_id=user_id, id_=result_id, company_id=company_id, db=db
+            await quiz_result_service.get_average_score_for_company(
+                db=db_session, company_id=company_id
             )
+
         assert exc_info.value.status_code == 404
-        assert exc_info.value.detail == "There is no such a company"
+        assert exc_info.value.detail == "Such a company does not exist"
 
-    mock_get_one_company.return_value = CompanyModel(
-        id=company_id, owner_id=user_id, name="Test Company"
-    )
-
-    mock_get_one_member.return_value = None
-    async for db in get_db_fixture:
-        with pytest.raises(HTTPException) as exc_info:
-            await quiz_result_service.get_results_for_user(
-                user_id=user_id, id_=result_id, company_id=company_id, db=db
-            )
-        assert exc_info.value.status_code == 403
-        assert exc_info.value.detail == "You have no right to get all users results"
-
-    mock_get_one_member.return_value = MemberModel(
-        id=user_id, company_id=company_id, role="member"
-    )
-
-    async for db in get_db_fixture:
-        with pytest.raises(HTTPException) as exc_info:
-            await quiz_result_service.get_results_for_user(
-                user_id=user_id, id_=result_id, company_id=company_id, db=db
-            )
-        assert exc_info.value.status_code == 403
-        assert exc_info.value.detail == "You do not have such rights"
-
-    mock_get_one_member.return_value = MemberModel(
-        id=user_id, company_id=company_id, role="admin"
-    )
-
-    mock_get_one_member.return_value = MemberModel(
-        id=user_id, company_id=2, role="admin"
-    )
-    async for db in get_db_fixture:
-        with pytest.raises(HTTPException) as exc_info:
-            await quiz_result_service.get_results_for_user(
-                user_id=user_id, id_=result_id, company_id=company_id, db=db
-            )
-        assert exc_info.value.status_code == 403
-        assert exc_info.value.detail == "You are not a member of the company"
-
-    mock_get_one_member.return_value = MemberModel(
-        id=user_id, company_id=company_id, role="admin"
-    )
-
-    mock_get_all_by_filter.return_value = quiz_results
-    async for db in get_db_fixture:
-        results = await quiz_result_service.get_results_for_user(
-            user_id=user_id, id_=result_id, company_id=company_id, db=db
-        )
-        assert results == quiz_results
-
-        mock_get_all_by_filter.assert_called_once_with(
-            db=db, filters={"user_id": result_id}
-        )
-
-
-
-
-@pytest.mark.asyncio
-@patch("app.CRUD.quiz_result_crud.quiz_result_crud.get_all_by_filter")
-@patch("app.CRUD.member_crud.member_crud.get_one")
-@patch("app.CRUD.company_crud.company_crud.get_one")
-async def test_get_all_company_results_errors(
-    mock_get_company, mock_get_member, mock_get_results, quiz_result_service, get_db_fixture
-):
-    quiz_result_service = await quiz_result_service
-    mock_get_company.return_value = None
-    async for db in get_db_fixture:
-        with pytest.raises(HTTPException) as excinfo:
-            await quiz_result_service.get_all_company_results(user_id=1, company_id=1, db=db)
-        assert excinfo.value.status_code == 404
-        assert excinfo.value.detail == "There is no such a company"
-    mock_get_company.reset_mock()
-
-    # Test when user is not authorized (not a member or owner)
-    mock_get_company.return_value = CompanyModel(id=1, owner_id=2, name="Test Company", description="Test Description")
-    mock_get_member.return_value = None
-    async for db in get_db_fixture:
-        with pytest.raises(HTTPException) as excinfo:
-            await quiz_result_service.get_all_company_results(user_id=1, company_id=1, db=db)
-        assert excinfo.value.status_code == 403
-        assert excinfo.value.detail == "You have no right to get all users results"
-    mock_get_company.reset_mock()
-    mock_get_member.reset_mock()
-
-    # Test when user is not an admin
-    mock_get_company.return_value = CompanyModel(id=1, owner_id=1, name="Test Company", description="Test Description")
-    mock_get_member.return_value = MemberModel(id=1, company_id=1, role="member")
-    async for db in get_db_fixture:
-        with pytest.raises(HTTPException) as excinfo:
-            await quiz_result_service.get_all_company_results(user_id=1, company_id=1, db=db)
-        assert excinfo.value.status_code == 403
-        assert excinfo.value.detail == "You do not have such rights"
-    mock_get_company.reset_mock()
-    mock_get_member.reset_mock()
-
-    # Test when user is an admin but not a member of the company
-    mock_get_company.return_value = CompanyModel(id=1, owner_id=1, name="Test Company", description="Test Description")
-    mock_get_member.return_value = MemberModel(id=2, company_id=2, role="admin")
-    async for db in get_db_fixture:
-        with pytest.raises(HTTPException) as excinfo:
-            await quiz_result_service.get_all_company_results(user_id=1, company_id=1, db=db)
-        assert excinfo.value.status_code == 403
-        assert excinfo.value.detail == "You are not a member of the company"
-    mock_get_company.reset_mock()
-    mock_get_member.reset_mock()
-    mock_get_results.reset_mock()
-
-
-@pytest.mark.asyncio
-@patch("app.CRUD.quiz_result_crud.quiz_result_crud.get_all_by_filter")
-@patch("app.CRUD.member_crud.member_crud.get_one")
-@patch("app.CRUD.company_crud.company_crud.get_one")
-async def test_get_all_company_results_success(mock_get_company, mock_get_member, mock_get_results, quiz_result_service, get_db_fixture):
-    quiz_result_service = await  quiz_result_service
-    mock_get_company.return_value = CompanyModel(id=1, owner_id=1, name="Test Company", description="Test Description")
-    mock_get_member.return_value = MemberModel(id=1, company_id=1, role="admin")
-    mock_get_results.return_value = [QuizResultCreateSchema(id=1, quiz_id=1, company_id=1, score=0.9, user_id=1),
-                                     QuizResultCreateSchema(id=2, quiz_id=1, company_id=1, score=0.8, user_id=2)]
-
-    async for db in get_db_fixture:
-        results = await quiz_result_service.get_all_company_results(user_id=1, company_id=1, db=db)
-        assert len(results) == 2
-        assert results[0].id == 1
-        assert results[1].id == 2
-
-    mock_get_company.assert_called_once_with(id_=1, db=db)
-    mock_get_member.assert_called_once_with(id_=1, db=db)
-    mock_get_results.assert_called_once_with(db=db, filters={"company_id": 1})
+        mock_get_one.assert_awaited_once_with(id_=company_id, db=db_session)

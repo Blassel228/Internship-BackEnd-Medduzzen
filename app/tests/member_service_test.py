@@ -12,6 +12,81 @@ async def member_service():
 
 
 @pytest.mark.asyncio
+@patch("app.CRUD.company_crud.company_crud.get_one", new_callable=AsyncMock)
+@patch("app.CRUD.member_crud.member_crud.get_all_by_filter", new_callable=AsyncMock)
+async def test_get_all_admins_in_company_errors(
+    mock_get_all_by_filter, mock_get_one, get_db_fixture, member_service
+):
+    member_service = await member_service
+    user_id = 1
+    company_id = 1
+
+    async for db_session in get_db_fixture:
+        mock_get_one.return_value = None
+        with pytest.raises(HTTPException) as exc_info:
+            await member_service.get_all_admins_in_company(
+                user_id=user_id, company_id=company_id, db=db_session
+            )
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == "There is no such a company"
+        mock_get_one.assert_called_once_with(id_=company_id, db=db_session)
+
+        mock_get_one.reset_mock()
+        mock_get_all_by_filter.reset_mock()
+
+        mock_get_one.return_value = CompanyModel(id=company_id, owner_id=2)
+        with pytest.raises(HTTPException) as exc_info:
+            await member_service.get_all_admins_in_company(
+                user_id=user_id, company_id=company_id, db=db_session
+            )
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail == "You do not own such a company"
+        mock_get_one.assert_called_once_with(id_=company_id, db=db_session)
+
+        mock_get_one.reset_mock()
+        mock_get_all_by_filter.reset_mock()
+
+        mock_get_one.return_value = CompanyModel(id=company_id, owner_id=user_id)
+        mock_get_all_by_filter.return_value = []  # No admins found
+        with pytest.raises(HTTPException) as exc_info:
+            await member_service.get_all_admins_in_company(
+                user_id=user_id, company_id=company_id, db=db_session
+            )
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == "There are no admins"
+        mock_get_one.assert_called_once_with(id_=company_id, db=db_session)
+        mock_get_all_by_filter.assert_called_once_with(
+            filters={"role": "admin"}, db=db_session
+        )
+
+
+@pytest.mark.asyncio
+@patch("app.CRUD.company_crud.company_crud.get_one", new_callable=AsyncMock)
+@patch("app.CRUD.member_crud.member_crud.get_all_by_filter", new_callable=AsyncMock)
+async def test_get_all_admins_in_company_success(
+    mock_get_all_by_filter, mock_get_one, get_db_fixture, member_service
+):
+    member_service = await member_service
+    user_id = 1
+    company_id = 1
+    company = CompanyModel(id=company_id, owner_id=user_id)
+    admins = [MemberModel(id=2, company_id=company_id, role="admin")]
+
+    mock_get_one.return_value = company
+    mock_get_all_by_filter.return_value = admins
+
+    async for db_session in get_db_fixture:
+        result = await member_service.get_all_admins_in_company(
+            user_id=user_id, company_id=company_id, db=db_session
+        )
+        assert result == admins
+        mock_get_one.assert_called_once_with(id_=company_id, db=db_session)
+        mock_get_all_by_filter.assert_called_once_with(
+            filters={"role": "admin"}, db=db_session
+        )
+
+
+@pytest.mark.asyncio
 @patch("app.CRUD.company_crud.company_crud.get_one")
 @patch("app.CRUD.member_crud.member_crud.get_one")
 async def test_demote_member_from_admin_success(
@@ -65,9 +140,7 @@ async def test_demote_member_from_admin_errors(
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == "Company not found"
 
-    mock_get_company.return_value = CompanyModel(
-        id=company_id, owner_id=999
-    )  # Not the owner
+    mock_get_company.return_value = CompanyModel(id=company_id, owner_id=999)
 
     async for db_session in get_db_fixture:
         with pytest.raises(HTTPException) as exc_info:
@@ -238,15 +311,20 @@ async def test_fire_user_errors(
 
 @pytest.mark.asyncio
 @patch("app.CRUD.member_crud.member_crud.get_one", new_callable=AsyncMock)
-@patch("app.CRUD.member_crud.member_crud.delete", new_callable=AsyncMock)
-async def test_user_resign(mock_delete, mock_get_one, member_service):
+async def test_user_resign_errors(mock_get_one, member_service):
     member_service = await member_service
     mock_get_one.return_value = None
     with pytest.raises(HTTPException) as exc_info:
         await member_service.user_resign(db=AsyncMock(), user_id=1)
-    assert exc_info.value.status_code == 403
+    assert exc_info.value.status_code == 404
     assert exc_info.value.detail == "You are not a member in any company"
 
+
+@pytest.mark.asyncio
+@patch("app.CRUD.member_crud.member_crud.get_one", new_callable=AsyncMock)
+@patch("app.CRUD.member_crud.member_crud.delete", new_callable=AsyncMock)
+async def test_user_resign_success(mock_delete, mock_get_one, member_service):
+    member_service = await member_service
     mock_get_one.return_value = MemberModel(id=1, company_id=1, role="member")
     mock_delete.return_value = None
     member = await member_service.user_resign(db=AsyncMock(), user_id=1)

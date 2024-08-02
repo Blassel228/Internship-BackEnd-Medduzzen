@@ -14,6 +14,8 @@ class MemberService:
         if company.owner_id != user_id:
             raise HTTPException(status_code=403, detail="You do not own such a company")
         admins = await member_crud.get_all_by_filter(filters={"role": "admin"}, db=db)
+        if not admins:
+            raise HTTPException(status_code=404, detail="There are no admins")
         return admins
 
     async def promote_member_to_admin(
@@ -70,7 +72,7 @@ class MemberService:
         member = await member_crud.get_one(id_=user_id, db=db)
         if member is None:
             raise HTTPException(
-                status_code=403, detail="You are not a member in any company"
+                status_code=404, detail="You are not a member in any company"
             )
         await member_crud.delete(id_=user_id, db=db)
         return member

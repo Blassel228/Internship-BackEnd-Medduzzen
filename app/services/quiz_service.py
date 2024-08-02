@@ -20,7 +20,16 @@ class QuizService:
         quiz_data: QuizCreateSchema,
     ):
         try:
+            quiz = await quiz_crud.get_one(id_=quiz_data.id, db=db)
+            if quiz is not None:
+                raise HTTPException(
+                    status_code=409, detail="A quiz with such an id already exist"
+                )
             company = await company_crud.get_one(id_=company_id, db=db)
+            if company is None:
+                raise HTTPException(
+                    status_code=404, detail="Such a company does not exist"
+                )
             member = await member_crud.get_one(id_=user_id, db=db)
             if member is None or member.role != "admin":
                 if user_id != company.owner_id:
@@ -62,6 +71,7 @@ class QuizService:
                     )
                     db.add(new_option)
                     await db.flush()
+            await db.commit()
             await db.refresh(new_quiz)
             await notification_service.notify_users(
                 company_id=company_id,
@@ -69,7 +79,7 @@ class QuizService:
                 notification_text=notification_text,
                 db=db,
             )
-            await db.commit()
+
             return new_quiz
         except Exception as e:
             await db.rollback()
@@ -83,7 +93,7 @@ class QuizService:
             count += 1
         if count < 2:
             raise HTTPException(
-                detail="There must be two or more questions", status_code=403
+                detail="There must be two or more questions", status_code=400
             )
         quiz = await quiz_crud.get_one(id_=id_, db=db)
         member = await member_crud.get_one(id_=user_id, db=db)
@@ -95,7 +105,7 @@ class QuizService:
         if member is None or member.role != "admin":
             if user_id != company.owner_id:
                 raise HTTPException(
-                    status_code=403, detail="You are not a member of this company."
+                    status_code=404, detail="You are not a member of this company."
                 )
         quiz.id = data.id
         quiz.name = data.name
@@ -112,7 +122,7 @@ class QuizService:
             if len(question_data.options) < 2:
                 raise HTTPException(
                     detail="There must be two or more options for every question",
-                    status_code=403,
+                    status_code=400,
                 )
             db_question = QuestionModel(text=question_data.text, quiz_id=quiz.id)
             db.add(db_question)

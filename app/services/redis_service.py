@@ -43,11 +43,12 @@ class RedisService:
         redis = await redis_connect()
         keys = await redis.keys(key)
         cache = await redis.mget(keys)
-        if cache:
-            parsed_values = [json.loads(value) for value in cache]
-            return parsed_values
+        if not cache:
+            raise HTTPException(status_code=404, detail="Cache was not found")
+
+        parsed_values = [json.loads(value) for value in cache]
         await redis.close()
-        return None
+        return parsed_values
 
     async def admin_get_cache_for_user(
         self, id_: int, quiz_id: int, user_id: int, db: AsyncSession, company_name: str
@@ -80,6 +81,8 @@ class RedisService:
         company = await company_crud.get_one_by_filter(
             filters={"name": company_name}, db=db
         )
+        if company is None:
+            raise HTTPException(status_code=404, detail="There is no such a company")
         key = f"quiz_result:*:*:{company.id}"
         return await self.get_from_cache(
             key=key, db=db, user_id=user_id, company_name=company_name

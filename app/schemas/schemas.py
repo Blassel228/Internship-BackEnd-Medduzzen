@@ -10,10 +10,10 @@ class UserCreateSchema(BaseModel):
 
 
 class UserUpdateInSchema(BaseModel):
-    id: int
-    username: str
-    password: str
-    email: EmailStr
+    id: Optional[int] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 
 class UserUpdateSchema(BaseModel):
@@ -24,8 +24,8 @@ class UserUpdateSchema(BaseModel):
 
 
 class UserSelfUpdateSchema(BaseModel):
-    username: str
-    hashed_password: str
+    username: Optional[str] = None
+    hashed_password: Optional[str] = None
 
 
 class TokenSchema(BaseModel):

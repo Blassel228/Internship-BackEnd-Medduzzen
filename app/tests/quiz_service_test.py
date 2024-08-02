@@ -49,7 +49,9 @@ def valid_quiz_data():
 @pytest.mark.asyncio
 @patch("app.CRUD.company_crud.company_crud.get_one")
 @patch("app.CRUD.member_crud.member_crud.get_one")
+@patch("app.CRUD.quiz_crud.quiz_crud.get_one")
 async def test_create_quiz_success(
+    mock_quiz_get_one,
     mock_member_get_one,
     mock_company_get_one,
     quiz_service,
@@ -58,7 +60,10 @@ async def test_create_quiz_success(
 ):
     mock_company_get_one.return_value = CompanyModel(id=1, owner_id=1)
     mock_member_get_one.return_value = MemberModel(id=1, role="admin")
-
+    mock_quiz_get_one.side_effect = [
+        None,
+        AsyncMock(id=valid_quiz_data.id, description=valid_quiz_data.description),
+    ]
     quiz_service = await quiz_service
     async for db_session in get_db_fixture:
         db_session.add = AsyncMock()
@@ -143,7 +148,17 @@ async def test_update_quiz_success(
 
 
 @pytest.mark.asyncio
-async def test_update_quiz_with_few_questions(quiz_service, get_db_fixture):
+@patch("app.CRUD.quiz_crud.quiz_crud.get_one")
+@patch("app.CRUD.company_crud.company_crud.get_one")
+@patch("app.CRUD.member_crud.member_crud.get_one")
+async def test_update_quiz_errors(
+    mock_get_one_member,
+    mock_get_one_company,
+    mock_get_one_quiz,
+    quiz_service,
+    get_db_fixture,
+    valid_quiz_data,
+):
     quiz_service = await quiz_service
 
     invalid_quiz_data = QuizCreateSchema(
@@ -162,73 +177,46 @@ async def test_update_quiz_with_few_questions(quiz_service, get_db_fixture):
     )
 
     async for db in get_db_fixture:
+        mock_get_one_quiz.return_value = None
+        mock_get_one_company.return_value = None
+        mock_get_one_member.return_value = None
+
         with pytest.raises(HTTPException) as exc_info:
             await quiz_service.update(id_=1, db=db, data=invalid_quiz_data, user_id=1)
-        assert exc_info.value.status_code == 403
+        assert exc_info.value.status_code == 400
         assert exc_info.value.detail == "There must be two or more questions"
 
+        mock_get_one_quiz.return_value = None
+        mock_get_one_company.return_value = None
+        mock_get_one_member.return_value = None
 
-@pytest.mark.asyncio
-@patch("app.CRUD.quiz_crud.quiz_crud.get_one")
-async def test_update_quiz_not_found(
-    mock_get_one_quiz, quiz_service, get_db_fixture, valid_quiz_data
-):
-    quiz_service = await quiz_service
-    mock_get_one_quiz.return_value = None
-
-    async for db in get_db_fixture:
         with pytest.raises(HTTPException) as exc_info:
             await quiz_service.update(id_=1, db=db, data=valid_quiz_data, user_id=1)
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == "Quiz not found"
 
+        mock_get_one_quiz.return_value = QuizModel(
+            id=1, name="Original Quiz", description="Original Description", company_id=1
+        )
+        mock_get_one_company.return_value = None
+        mock_get_one_member.return_value = None
 
-@pytest.mark.asyncio
-@patch("app.CRUD.quiz_crud.quiz_crud.get_one")
-@patch("app.CRUD.company_crud.company_crud.get_one")
-async def test_update_quiz_company_not_found(
-    mock_get_one_company,
-    mock_get_one_quiz,
-    quiz_service,
-    get_db_fixture,
-    valid_quiz_data,
-):
-    quiz_service = await quiz_service
-    mock_get_one_quiz.return_value = QuizModel(
-        id=1, name="Original Quiz", description="Original Description", company_id=1
-    )
-    mock_get_one_company.return_value = None
-
-    async for db in get_db_fixture:
         with pytest.raises(HTTPException) as exc_info:
             await quiz_service.update(id_=1, db=db, data=valid_quiz_data, user_id=1)
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == "Company not found"
 
+        mock_get_one_quiz.return_value = QuizModel(
+            id=1, name="Original Quiz", description="Original Description", company_id=1
+        )
+        mock_get_one_company.return_value = CompanyModel(
+            id=1, owner_id=2, name="Test Company", description="Test Description"
+        )
+        mock_get_one_member.return_value = MemberModel(
+            id=1, company_id=1, role="member"
+        )
 
-@pytest.mark.asyncio
-@patch("app.CRUD.quiz_crud.quiz_crud.get_one")
-@patch("app.CRUD.company_crud.company_crud.get_one")
-@patch("app.CRUD.member_crud.member_crud.get_one")
-async def test_update_quiz_not_authorized(
-    mock_get_one_member,
-    mock_get_one_company,
-    mock_get_one_quiz,
-    quiz_service,
-    get_db_fixture,
-    valid_quiz_data,
-):
-    quiz_service = await quiz_service
-    mock_get_one_quiz.return_value = QuizModel(
-        id=1, name="Original Quiz", description="Original Description", company_id=1
-    )
-    mock_get_one_company.return_value = CompanyModel(
-        id=1, owner_id=2, name="Test Company", description="Test Description"
-    )
-    mock_get_one_member.return_value = MemberModel(id=1, company_id=1, role="member")
-
-    async for db in get_db_fixture:
         with pytest.raises(HTTPException) as exc_info:
             await quiz_service.update(id_=1, db=db, data=valid_quiz_data, user_id=1)
-        assert exc_info.value.status_code == 403
+        assert exc_info.value.status_code == 404
         assert exc_info.value.detail == "You are not a member of this company."

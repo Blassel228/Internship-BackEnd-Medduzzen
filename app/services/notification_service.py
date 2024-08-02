@@ -14,6 +14,11 @@ class NotificationService:
         self, quiz_id: int, company_id: int, notification_text: str, db: AsyncSession
     ):
         company = await company_crud.get_one(id_=company_id, db=db)
+        quiz = await quiz_crud.get_one(id_=quiz_id, db=db)
+        if quiz is None:
+            raise HTTPException(status_code=404, detail="Such a quiz does not exist")
+        if company is None:
+            raise HTTPException(status_code=404, detail="Such a company does not exist")
         for member in company.members:
             if member.company_id == company.id:
                 notification = NotificationCreateSchema(
@@ -54,10 +59,7 @@ class NotificationService:
                         datetime.datetime.utcnow() - latest.registration_date
                     )
 
-                if (
-                    time_difference > datetime.timedelta(minutes=1)
-                    or not passed_quizzes
-                ):
+                if time_difference > datetime.timedelta(hours=24) or not passed_quizzes:
                     notification = NotificationCreateSchema(
                         quiz_id=quiz.id, user_id=member.id, text=text
                     )

@@ -49,6 +49,7 @@ async def test_self_update_error(mock_update, user_service, get_db_fixture):
     invalid_data = "invalid_json"
     mock_update.return_value = None
     service = await user_service
+
     with pytest.raises(HTTPException) as exc_info:
         await service.self_update(user_id, get_db_fixture, invalid_data)
     assert exc_info.value.status_code == 422

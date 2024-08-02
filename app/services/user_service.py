@@ -14,8 +14,6 @@ class UserService:
         data = data.model_dump(exclude={"id", "email"}, exclude_none=True)
         if "password" in data:
             data["hashed_password"] = pwd_context.hash(data.pop("password"))
-        if not data:
-            raise HTTPException(detail="Data is not full-filled", status_code=403)
         res = await user_crud.update(id_=id_, data=UserSelfUpdateSchema(**data), db=db)
         return res
 

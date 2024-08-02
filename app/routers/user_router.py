@@ -29,7 +29,7 @@ async def add(data: UserCreateSchema, db: AsyncSession = Depends(get_db)):
 async def update(
     id_: int, data: UserUpdateInSchema, db: AsyncSession = Depends(get_db)
 ):
-    return await user_crud.user_update(id_=id_, data=data, db=db)
+    return await user_crud.update(id_=id_, data=data, db=db)
 
 
 @user_router.delete("/delete")
