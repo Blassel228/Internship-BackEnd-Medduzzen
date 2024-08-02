@@ -10,8 +10,8 @@ from fastapi import Depends
 invitation_router = APIRouter(prefix="/invitation", tags=["Invitation"])
 
 
-@invitation_router.get("/user_get_all_sent_invitations")
-async def user_get_all_sent_invitations(
+@invitation_router.get("/sent")
+async def get_user_sent_invitations(
     db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     return await invitation_crud.get_all_by_filter(
@@ -19,8 +19,8 @@ async def user_get_all_sent_invitations(
     )
 
 
-@invitation_router.get("/owner_get_all_sent_invitations")
-async def owner_get_all_sent_invitations(
+@invitation_router.get("/company/{company_id}/sent")
+async def get_owner_sent_invitations(
     company_id: int,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -30,7 +30,7 @@ async def owner_get_all_sent_invitations(
     )
 
 
-@invitation_router.post("/send_invitation")
+@invitation_router.post("/")
 async def send_invitation(
     data: InvitationCreateSchema,
     db: AsyncSession = Depends(get_db),
@@ -41,7 +41,7 @@ async def send_invitation(
     )
 
 
-@invitation_router.post("/accept_invitation")
+@invitation_router.post("/{id_}/accept")
 async def accept_invitation(
     id_: int, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
@@ -50,7 +50,7 @@ async def accept_invitation(
     )
 
 
-@invitation_router.delete("/reject_invitation")
+@invitation_router.delete("/{id_}/reject")
 async def reject_invitation(
     id_: int, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
@@ -59,7 +59,7 @@ async def reject_invitation(
     )
 
 
-@invitation_router.delete("/delete_invitation_by_owner")
+@invitation_router.delete("/{id_}")
 async def delete_invitation_by_owner(
     id_: int, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):

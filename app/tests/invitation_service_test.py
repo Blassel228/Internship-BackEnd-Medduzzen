@@ -265,7 +265,7 @@ async def test_delete_invitation_by_owner_errors(
         assert exc_info.value.status_code == 403
         assert (
             exc_info.value.detail
-            == "You do not possess the compony to delete invitations"
+            == "You do not possess the company to delete invitations"
         )
 
 

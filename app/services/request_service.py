@@ -55,7 +55,7 @@ class RequestService:
         return request
 
     async def accept_request(
-        self, id_: int, user_id: int, db: AsyncSession = Depends(get_db)
+        self, id_: int, user_id: int, company_name: str, db: AsyncSession = Depends(get_db)
     ):
         request = await request_crud.get_one(id_=id_, db=db)
         if request is None:
@@ -64,8 +64,11 @@ class RequestService:
             )
         user = await user_crud.get_one(id_=request.sender_id, db=db)
         company = await company_crud.get_one_by_filter(
-            db=db, filters={"owner_id": user_id}
+            db=db, filters={"name": company_name}
         )
+        if company is None:
+            raise HTTPException(status_code=404, detail="There is no such a company")
+
         if company.owner_id != user_id:
             raise HTTPException(
                 status_code=403,
@@ -86,6 +89,8 @@ class RequestService:
                 status_code=404, detail="The request with such an id does not exist"
             )
         company = await company_crud.get_one(id_=request.company_id, db=db)
+        if company is None:
+            raise HTTPException(status_code=404, detail="Company was not found")
         if company.owner_id != user_id:
             raise HTTPException(
                 status_code=403,

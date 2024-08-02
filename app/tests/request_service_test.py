@@ -222,12 +222,13 @@ async def test_accept_request_success(
     user_id = 2
     request_sender_id = 3
     company_id = 1
+    company_name = "Valid company"
 
     mock_get_request.return_value = MagicMock(
         id=request_id, sender_id=request_sender_id
     )
     mock_get_user.return_value = MagicMock(id=request_sender_id)
-    mock_get_company.return_value = MagicMock(id=company_id, owner_id=user_id)
+    mock_get_company.return_value = MagicMock(id=company_id, owner_id=user_id, company_name=company_name)
 
     request_service = await request_service
     expected_member = MemberCreateSchema(id=request_sender_id, company_id=company_id)
@@ -235,14 +236,14 @@ async def test_accept_request_success(
 
     async for db_session in get_db_fixture:
         member = await request_service.accept_request(
-            id_=request_id, user_id=user_id, db=db_session
+            id_=request_id, user_id=user_id, db=db_session, company_name=company_name
         )
         assert member.id == request_sender_id
         assert member.company_id == company_id
         mock_get_request.assert_called_once_with(id_=request_id, db=db_session)
         mock_get_user.assert_called_once_with(id_=request_sender_id, db=db_session)
         mock_get_company.assert_called_once_with(
-            db=db_session, filters={"owner_id": user_id}
+            db=db_session, filters={"name": company_name}
         )
         mock_delete_request.assert_called_once_with(id_=request_id, db=db_session)
         mock_add_member.assert_called_once_with(db=db_session, data=expected_member)
@@ -259,14 +260,14 @@ async def test_accept_request_errors(
     user_id = 2
     request_sender_id = 3
     company_id = 1
-
+    company_name = "Valid company"
     request_service = await request_service
 
     async for db_session in get_db_fixture:
         mock_get_request.return_value = None
         with pytest.raises(HTTPException) as excinfo:
             await request_service.accept_request(
-                id_=request_id, user_id=user_id, db=db_session
+                id_=request_id, user_id=user_id, db=db_session, company_name=company_name
             )
         assert excinfo.value.status_code == 404
         assert excinfo.value.detail == "The request with such an id does not exist"
@@ -279,16 +280,34 @@ async def test_accept_request_errors(
             id=request_id, sender_id=request_sender_id
         )
         mock_get_user.return_value = MagicMock(id=request_sender_id)
-        mock_get_company.return_value = MagicMock(id=company_id, owner_id=user_id + 1)
+        mock_get_company.return_value = MagicMock(id=company_id, owner_id=user_id + 1, company_name=company_name)
 
         with pytest.raises(HTTPException) as excinfo:
             await request_service.accept_request(
-                id_=request_id, user_id=user_id, db=db_session
+                id_=request_id, user_id=user_id, db=db_session, company_name=company_name
             )
         assert excinfo.value.status_code == 403
         assert (
             excinfo.value.detail
             == "You can not accept the request as you are not the owner"
+        )
+
+        mock_get_company.reset_mock()
+
+        mock_get_request.return_value = MagicMock(
+            id=request_id, sender_id=request_sender_id
+        )
+        mock_get_user.return_value = MagicMock(id=request_sender_id)
+        mock_get_company.return_value = None
+
+        with pytest.raises(HTTPException) as excinfo:
+            await request_service.accept_request(
+                id_=request_id, user_id=user_id, db=db_session, company_name=company_name
+            )
+        assert excinfo.value.status_code == 404
+        assert (
+                excinfo.value.detail
+                == "There is no such a company"
         )
 
 
@@ -318,7 +337,6 @@ async def test_reject_request_success(
         result = await request_service.reject_request(
             id_=request_id, user_id=user_id, db=session
         )
-
         assert result.id == request_id
         assert result.company_id == company_id
         assert result.request_text == "Test request"
@@ -328,41 +346,39 @@ async def test_reject_request_success(
 @pytest.mark.asyncio
 @patch("app.CRUD.request_crud.request_crud.get_one")
 @patch("app.CRUD.company_crud.company_crud.get_one")
-async def test_reject_request_request_errors(
-    mock_get_company, mock_get_request, get_db_fixture, request_service
-):
+@patch("app.CRUD.request_crud.request_crud.delete")
+async def test_reject_request_errors(mock_delete, mock_company_get_one, mock_request_get_one, request_service,
+                                     get_db_fixture):
     request_service = await request_service
-    user_id = 1
-    request_id = 1
-    company_id = 1
 
-    mock_get_company.return_value = CompanyModel(id=company_id, owner_id=user_id + 1)
+    async for session in  get_db_fixture:
+        mock_request_get_one.return_value = None
+        with pytest.raises(HTTPException) as exc_info:
+            await request_service.reject_request(id_=1, user_id=1, db=session)
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == "The request with such an id does not exist"
 
-    mock_get_request.return_value = None
+        mock_request_get_one.reset_mock()
+        mock_request_get_one.return_value = RequestModel(id=1, company_id=1)
 
-    async for session in get_db_fixture:
-        with pytest.raises(HTTPException) as excinfo:
-            await request_service.reject_request(
-                id_=request_id, user_id=user_id, db=session
-            )
+        mock_company_get_one.return_value = None
+        with pytest.raises(HTTPException) as exc_info:
+            await request_service.reject_request(id_=1, user_id=1, db=session)
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == "Company was not found"
 
-        assert excinfo.value.status_code == 404
-        assert excinfo.value.detail == "The request with such an id does not exist"
+        mock_company_get_one.reset_mock()
+        mock_company_get_one.return_value = CompanyModel(id=1, owner_id=2)
 
-        mock_request = RequestModel(
-            id=request_id, company_id=company_id, request_text="Test request"
-        )
-        mock_get_request.return_value = mock_request
+        with pytest.raises(HTTPException) as exc_info:
+            await request_service.reject_request(id_=1, user_id=1, db=session)
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail == "You do not own the company to reject the request"
 
-        with pytest.raises(HTTPException) as excinfo:
-            await request_service.reject_request(
-                id_=request_id, user_id=user_id, db=session
-            )
+        mock_delete.assert_not_awaited()
 
-        assert excinfo.value.status_code == 403
-        assert (
-            excinfo.value.detail == "You do not own the company to reject the request"
-        )
+        mock_request_get_one.assert_awaited_with(id_=1, db=session)
+        mock_company_get_one.assert_awaited_with(id_=1, db=session)
 
 
 @pytest.mark.asyncio

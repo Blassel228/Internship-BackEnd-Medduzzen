@@ -113,11 +113,12 @@ class QuizService:
         questions = await question_crud.get_all_by_filter(
             filters={"quiz_id": id_}, db=db
         )
-        await question_crud.delete_all_by_filters(filters={"quiz_id": id_}, db=db)
         for question in questions:
             await option_crud.delete_all_by_filters(
                 filters={"question_id": question.id}, db=db
             )
+        await question_crud.delete_all_by_filters(filters={"quiz_id": id_}, db=db)
+
         for question_data in data.questions:
             if len(question_data.options) < 2:
                 raise HTTPException(

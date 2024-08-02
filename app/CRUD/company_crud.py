@@ -36,9 +36,7 @@ class CompanyCrud(CrudRepository):
             )
         return res
 
-    async def update(
-        self, id_: int, user_id: int, db: AsyncSession, data: CompanyUpdateSchema
-    ):  # noqa
+    async def update(self, id_: int, user_id: int, db: AsyncSession, data: CompanyUpdateSchema):  # noqa
         res = await self.get_one(db=db, id_=id_)
         if res is None:
             raise HTTPException(
@@ -47,7 +45,7 @@ class CompanyCrud(CrudRepository):
             )
         if user_id == res.owner_id:
             stmt = (
-                update(self.model).values(data.model_dump()).where(self.model.id == id_)
+                update(self.model).values(data.model_dump(exclude_none=True)).where(self.model.id == id_)
             )
             await db.execute(stmt)
             await db.commit()

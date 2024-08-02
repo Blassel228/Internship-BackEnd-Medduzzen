@@ -44,11 +44,10 @@ class InvitationService:
                 detail="You do not own the company to send invitations",
             )
         member = await member_crud.get_one(id_=data.recipient_id, db=db)
-        if member is not None:
-            if member.company_id == data.company_id:
-                raise HTTPException(
-                    status_code=400, detail="The user is in your company already"
-                )
+        if member and member.company_id == data.company_id:
+            raise HTTPException(
+                status_code=400, detail="The user is in your company already"
+            )
         invitation = await invitation_crud.add(data=data, db=db)
         return invitation
 
@@ -64,7 +63,7 @@ class InvitationService:
         if company.owner_id != user_id:
             raise HTTPException(
                 status_code=403,
-                detail="You do not possess the compony to delete invitations",
+                detail="You do not possess the company to delete invitations",
             )
         await invitation_crud.delete(id_=id_, db=db)
         return invitation

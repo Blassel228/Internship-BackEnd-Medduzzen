@@ -49,8 +49,8 @@ class CompanyCreateInSchema(BaseModel):
 
 
 class CompanyUpdateSchema(BaseModel):
-    name: str
-    description: str
+    name: Optional[str] = None
+    description: Optional[str] = None
 
 
 class CompanyUpdateVisibility(BaseModel):
@@ -87,9 +87,18 @@ class OptionCreateSchema(BaseModel):
     is_correct: bool
 
 
+class OptionUpdateSchema(BaseModel):
+    str: str
+    is_correct: bool
+
 class QuestionCreateSchema(BaseModel):
     text: str
     options: List[OptionCreateSchema]
+
+
+class QuestionUpdateSchema(BaseModel):
+    test: str
+    quiz_id: int
 
 
 class QuizCreateSchema(BaseModel):
@@ -97,6 +106,9 @@ class QuizCreateSchema(BaseModel):
     name: str
     description: str
     questions: List[QuestionCreateSchema]
+
+
+
 
 
 class QuizResultCreateInSchema(BaseModel):
