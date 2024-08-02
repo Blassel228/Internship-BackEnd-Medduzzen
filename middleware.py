@@ -1,7 +1,10 @@
 from fastapi.middleware.cors import CORSMiddleware
 from app.main import app
+from app.core.config import settings
 
-origins = ["http://127.0.0.1:8000", "http://0.0.0.0:8000"]
+
+origins = settings.cors_origins
+
 
 app.add_middleware(
     CORSMiddleware,
