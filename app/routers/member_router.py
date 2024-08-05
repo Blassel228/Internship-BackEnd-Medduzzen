@@ -1,8 +1,9 @@
-from app.utils.deps import get_db, get_current_user
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.services.member_service import member_service
-from app.CRUD.member_crud import member_crud
 from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.CRUD.member_crud import member_crud
+from app.services.member_service import member_service
+from app.utils.deps import get_db, get_current_user
 
 member_router = APIRouter(tags=["Member"], prefix="/members")
 

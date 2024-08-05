@@ -1,9 +1,10 @@
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.CRUD.company_crud import company_crud
 from app.CRUD.invitation_crud import invitation_crud
-from fastapi import HTTPException
-from app.schemas.schemas import InvitationCreateSchema, MemberCreateSchema
 from app.CRUD.member_crud import member_crud
+from app.CRUD.user_crud import user_crud
+from app.schemas.schemas import InvitationCreateSchema, MemberCreateSchema
 
 
 class InvitationService:
@@ -26,6 +27,11 @@ class InvitationService:
     async def send_invitation(
         self, user_id: int, data: InvitationCreateSchema, db: AsyncSession
     ):
+        recipient = await user_crud.get_one(id_=data.recipient_id, db=db)
+        if recipient is None:
+            raise HTTPException(
+                status_code=404, detail="A user with such an id does not exist"
+            )
         invitation = await invitation_crud.get_one(id_=data.id, db=db)
         if invitation is not None:
             raise HTTPException(

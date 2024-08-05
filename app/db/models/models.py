@@ -1,10 +1,11 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Float
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy import MetaData
-from sqlalchemy.orm import declarative_base, relationship
-from datetime import datetime
-from app.core.config import settings
 import logging
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Float
+from sqlalchemy import MetaData
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.orm import declarative_base, relationship
+
+from app.core.config import settings
 
 logger = logging.getLogger("sqlalchemy.engine")
 logger.setLevel(logging.INFO)

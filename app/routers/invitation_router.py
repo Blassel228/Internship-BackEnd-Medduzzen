@@ -1,11 +1,10 @@
 from fastapi import APIRouter
-from app.schemas.schemas import InvitationCreateSchema
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.CRUD.invitation_crud import invitation_crud
+from app.schemas.schemas import InvitationCreateSchema
 from app.services.invitation_service import invitation_service
 from app.utils.deps import get_db, get_current_user
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends
-
 
 invitation_router = APIRouter(prefix="/invitation", tags=["Invitation"])
 

@@ -91,6 +91,7 @@ class OptionUpdateSchema(BaseModel):
     str: str
     is_correct: bool
 
+
 class QuestionCreateSchema(BaseModel):
     text: str
     options: List[OptionCreateSchema]
@@ -106,9 +107,6 @@ class QuizCreateSchema(BaseModel):
     name: str
     description: str
     questions: List[QuestionCreateSchema]
-
-
-
 
 
 class QuizResultCreateInSchema(BaseModel):

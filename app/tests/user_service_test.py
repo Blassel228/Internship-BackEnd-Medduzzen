@@ -1,9 +1,9 @@
 from unittest.mock import patch
+import pytest
+from fastapi import HTTPException
 from app.autho.autho import pwd_context
 from app.schemas.schemas import UserUpdateInSchema
 from app.services.user_service import UserService
-from fastapi import HTTPException
-import pytest
 from app.tests.conftest import get_db_fixture
 
 

@@ -1,13 +1,13 @@
-from fastapi import HTTPException
-from app.schemas.schemas import MemberCreateSchema
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas.schemas import RequestCreateSchema, RequestCreateInSchema
 from fastapi import Depends
-from app.utils.deps import get_db
-from app.CRUD.user_crud import user_crud
+from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.CRUD.company_crud import company_crud
-from app.CRUD.request_crud import request_crud
 from app.CRUD.member_crud import member_crud
+from app.CRUD.request_crud import request_crud
+from app.CRUD.user_crud import user_crud
+from app.schemas.schemas import MemberCreateSchema
+from app.schemas.schemas import RequestCreateSchema, RequestCreateInSchema
+from app.utils.deps import get_db
 
 
 class RequestService:
@@ -33,6 +33,9 @@ class RequestService:
         request: RequestCreateInSchema,
         db: AsyncSession = Depends(get_db),
     ):
+        exist_request = await request_crud.get_one(id_=request.id, db=db)
+        if exist_request is not None:
+            raise HTTPException(status_code=409, detail="Request with such an id already exists")
         member = await member_crud.get_one(id_=user_id, db=db)
         if member is not None:
             raise HTTPException(status_code=403, detail="You are in a company already")
@@ -55,7 +58,11 @@ class RequestService:
         return request
 
     async def accept_request(
-        self, id_: int, user_id: int, company_name: str, db: AsyncSession = Depends(get_db)
+        self,
+        id_: int,
+        user_id: int,
+        company_name: str,
+        db: AsyncSession = Depends(get_db),
     ):
         request = await request_crud.get_one(id_=id_, db=db)
         if request is None:

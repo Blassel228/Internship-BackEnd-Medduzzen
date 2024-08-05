@@ -1,5 +1,5 @@
-from app.repositories.crud_repository import CrudRepository
 from app.db.models.models import QuestionModel
+from app.repositories.crud_repository import CrudRepository
 
 
 class QuestionCrud(CrudRepository):

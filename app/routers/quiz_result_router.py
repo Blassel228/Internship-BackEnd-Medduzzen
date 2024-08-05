@@ -1,11 +1,10 @@
 from fastapi import APIRouter
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.CRUD.quiz_result_crud import quiz_result_crud
 from app.schemas.schemas import QuizResultCreateInSchema
 from app.services.quiz_result_service import quiz_result_service
 from app.utils.deps import get_db, get_current_user
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends
-
 
 quiz_result_router = APIRouter(prefix="/quiz_result_router", tags=["Quiz_Result"])
 
@@ -65,12 +64,18 @@ async def get_average_score_for_company(
 
 
 @quiz_result_router.get("/average-score")
-async def get_average_score_for_all(db: AsyncSession = Depends(get_db)):
-    quiz = await quiz_result_service.get_average_score_for_all(db=db)
+async def get_average_score_for_all(
+    company_id: int, db: AsyncSession = Depends(get_db)
+):
+    quiz = await quiz_result_service.get_average_score_for_all(
+        db=db, company_id=company_id
+    )
     return quiz
 
 
-@quiz_result_router.get("/user/{user_id}/company/{company_id}/average-score-time-ranges")
+@quiz_result_router.get(
+    "/user/{user_id}/company/{company_id}/average-score-time-ranges"
+)
 async def get_user_quiz_averages_with_time_ranges(
     id_: int,
     company_id: int,

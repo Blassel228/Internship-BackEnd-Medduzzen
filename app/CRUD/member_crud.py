@@ -1,7 +1,7 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.repositories.crud_repository import CrudRepository
-from app.db.models.models import MemberModel
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.models.models import MemberModel
+from app.repositories.crud_repository import CrudRepository
 
 
 class MemberCrud(CrudRepository):

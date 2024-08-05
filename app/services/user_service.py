@@ -1,8 +1,8 @@
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.CRUD.user_crud import user_crud
 from app.schemas.schemas import UserSelfUpdateSchema, UserUpdateInSchema
 from app.utils.deps import pwd_context
-from fastapi import HTTPException
-from app.CRUD.user_crud import user_crud
 
 
 class UserService:

@@ -1,7 +1,7 @@
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.CRUD.company_crud import company_crud
 from app.CRUD.member_crud import member_crud
-from fastapi import HTTPException
 
 
 class MemberService:

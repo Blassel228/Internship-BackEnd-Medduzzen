@@ -1,16 +1,18 @@
 from datetime import timedelta, datetime
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Annotated
+
+from fastapi import Depends, HTTPException
 from fastapi import status
+from fastapi.security import HTTPBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import jwt as jose_jwt, JWTError
 from passlib.context import CryptContext
-from app.db.models.models import UserModel
-from app.utils.deps import get_db
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer
-from jose import jwt as jose_jwt
+
 from app.core.config import settings
+from app.db.models.models import UserModel
+from app.utils.deps import get_db
 
 bearer = HTTPBearer()
 
@@ -60,3 +62,40 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
         to_encode, settings.secret, algorithm=settings.algorithm
     )
     return encoded_jwt
+
+
+async def get_auth0_user(
+    token: Annotated[str, Depends(oauth2_scheme)], db: AsyncSession = Depends(get_db)
+):
+    try:
+        payload = jose_jwt.decode(
+            token,
+            settings.secret,
+            algorithms=[settings.algorithm],
+            audience=settings.api_audience,
+            issuer=settings.issuer,
+        )
+        email = payload.get("email")
+        if email is None:
+            raise HTTPException(
+                status_code=404, detail="Email not found in token payload"
+            )
+    except JWTError as e:
+        raise HTTPException(status_code=404, detail=f"JWT Error: {str(e)}")
+
+    res = await db.execute(select(UserModel).where(UserModel.email == email))
+    user = res.scalar()
+
+    if user is None:
+        new_user = UserModel(
+            username="empty",
+            hashed_password=pwd_context.hash("empty"),
+            email=email,
+            registration_date=datetime.utcnow(),
+        )
+        db.add(new_user)
+        await db.commit()
+        await db.refresh(new_user)
+        user = new_user
+
+    return user

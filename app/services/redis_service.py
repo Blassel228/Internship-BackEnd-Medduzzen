@@ -5,16 +5,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.CRUD.company_crud import company_crud
 from app.CRUD.member_crud import member_crud
 from app.db.base import redis_connect
+from app.exceptions.custom_exceptions import check_user_permissions
 
 
 class RedisService:
+    def __init__(self):
+        self.redis = redis_connect()
+
     async def cache_quiz_result(self, data: dict):
-        redis = await redis_connect()
         data_json = json.dumps(data)
         key = f"quiz_result:{data['quiz_id']}:{data['user_id']}:{data['company_id']}"
-        print(key)
-        await redis.set(key, data_json, ex=172800)
-        await redis.close()
+        self.redis.set(key, data_json, ex=172800)
 
     async def get_from_cache(
         self, key: str, user_id: int, db: AsyncSession, company_name: str
@@ -23,31 +24,12 @@ class RedisService:
         company = await company_crud.get_one_by_filter(
             filters={"name": company_name}, db=db
         )
-        if company is None:
-            raise HTTPException(status_code=404, detail="There is no such a company")
-        if member is None:
-            if company.owner_id != user_id:
-                raise HTTPException(
-                    status_code=403, detail="You have no right to get all users results"
-                )
-        if member is not None:
-            if member.role != "admin":
-                raise HTTPException(
-                    status_code=403, detail="You do not have such rights"
-                )
-            if member.company_id != company.id:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of the company"
-                )
-
-        redis = await redis_connect()
-        keys = await redis.keys(key)
-        cache = await redis.mget(keys)
+        check_user_permissions(member=member, company=company, user_id=user_id)
+        keys = await self.redis.keys(key)
+        cache = await self.redis.mget(keys)
         if not cache:
             raise HTTPException(status_code=404, detail="Cache was not found")
-
         parsed_values = [json.loads(value) for value in cache]
-        await redis.close()
         return parsed_values
 
     async def admin_get_cache_for_user(
@@ -68,9 +50,8 @@ class RedisService:
 
     async def user_get_its_result(self, user_id: int):
         key = f"quiz_result:*:{user_id}:*"
-        redis = await redis_connect()
-        keys = await redis.keys(key)
-        cache = await redis.mget(keys)
+        keys = await self.redis.keys(key)
+        cache = await self.redis.mget(keys)
         if cache:
             parsed_values = [json.loads(value) for value in cache]
             return parsed_values
@@ -152,16 +133,12 @@ class RedisService:
         return cache
 
     async def get(self, key):
-        redis = await redis_connect()
-        res = await redis.get(key)
-        await redis.close()
+        res = await self.redis.get(key)
         return res
 
     async def delete(self, key):
-        redis = await redis_connect()
-        res = await redis.get(key)
-        await redis.delete(key)
-        await redis.close()
+        res = await self.redis.get(key)
+        await self.redis.delete(key)
         return res
 
 

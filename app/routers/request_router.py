@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.utils.deps import get_db, get_current_user
-from app.schemas.schemas import RequestCreateInSchema
 from app.CRUD.request_crud import request_crud
+from app.schemas.schemas import RequestCreateInSchema
 from app.services.request_service import request_service
+from app.utils.deps import get_db, get_current_user
 
 request_router = APIRouter(tags=["Request"], prefix="/request")
 
@@ -34,7 +34,7 @@ async def get_all_owner_requests(
 async def send_request(
     request: RequestCreateInSchema,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     """Send a new request."""
     return await request_service.send_request(

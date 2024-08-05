@@ -1,6 +1,6 @@
 from fastapi import APIRouter
+from fastapi import Depends
 from app.CRUD.company_crud import company_crud
-from app.utils.deps import get_db, get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.schemas import (
     CompanyCreateSchema,
@@ -8,7 +8,7 @@ from app.schemas.schemas import (
     CompanyUpdateSchema,
     CompanyUpdateVisibility,
 )
-from fastapi import Depends
+from app.utils.deps import get_db, get_current_user
 
 company_router = APIRouter(prefix="/company", tags=["Company"])
 

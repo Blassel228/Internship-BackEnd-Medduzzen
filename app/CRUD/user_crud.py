@@ -1,14 +1,14 @@
 import logging
-
-from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas.schemas import UserCreateSchema
-from sqlalchemy.dialects.postgresql import insert
-from app.utils.deps import pwd_context
-from app.repositories.crud_repository import CrudRepository
-from app.db.models.models import UserModel
 from fastapi import HTTPException
+from pydantic import BaseModel
 from sqlalchemy import select, update
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.models.models import UserModel
+from app.repositories.crud_repository import CrudRepository
+from app.schemas.schemas import UserCreateSchema
+from app.utils.deps import pwd_context
 
 logger = logging.getLogger(__name__)
 

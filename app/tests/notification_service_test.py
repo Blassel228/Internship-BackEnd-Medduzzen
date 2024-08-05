@@ -1,11 +1,8 @@
 import datetime
-
-import pytest
 from unittest.mock import patch, AsyncMock
+import pytest
 from fastapi import HTTPException
-from app.services.notification_service import NotificationService
-from app.CRUD import company_crud, notification_crud
-from app.schemas.schemas import NotificationCreateSchema
+
 from app.db.models.models import (
     CompanyModel,
     MemberModel,
@@ -13,6 +10,8 @@ from app.db.models.models import (
     QuizModel,
     QuizResultModel,
 )
+from app.schemas.schemas import NotificationCreateSchema
+from app.services.notification_service import NotificationService
 
 
 @pytest.fixture

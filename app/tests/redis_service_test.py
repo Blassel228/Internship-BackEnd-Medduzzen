@@ -2,7 +2,6 @@ import json
 from unittest.mock import patch, MagicMock, AsyncMock, call
 import pytest
 from fastapi import HTTPException
-
 from app.db.models.models import MemberModel, CompanyModel
 from app.services.redis_service import RedisService
 
@@ -25,38 +24,26 @@ def test_data():
 
 
 @pytest.mark.asyncio
-@patch("app.services.redis_service.redis_connect", autospec=True)
-async def test_cache_quiz_result_success(mock_redis_connect, test_data, redis_service):
-    redis_service = await redis_service
-
+@patch("app.services.redis_service.redis_connect")
+async def test_cache_quiz_result_success(mock_redis_connect, test_data):
     mock_redis = AsyncMock()
     mock_redis_connect.return_value = mock_redis
+    redis_service = RedisService()
+    await redis_service.cache_quiz_result(test_data)
     expected_key = f"quiz_result:{test_data['quiz_id']}:{test_data['user_id']}:{test_data['company_id']}"
-    expected_data_json = json.dumps(test_data)
+    expected_value = json.dumps(test_data)
 
-    await redis_service.cache_quiz_result(data=test_data)
-
-    mock_redis.set.assert_called_once_with(expected_key, expected_data_json, ex=172800)
-    mock_redis.close.assert_called_once()
+    mock_redis.set.assert_called_once_with(expected_key, expected_value, ex=172800)
 
 
 @pytest.mark.asyncio
-@patch("app.services.redis_service.redis_connect", autospec=True)
-async def test_cache_quiz_result_redis_errors(
-    mock_redis_connect, test_data, redis_service
-):
-    redis_service = await redis_service
-    mock_redis = AsyncMock()
+@patch("app.services.redis_service.redis_connect")
+async def test_cache_quiz_result_redis_error(mock_redis_connect, test_data):
+    mock_redis = MagicMock()
     mock_redis_connect.return_value = mock_redis
-
-    mock_redis_connect.side_effect = Exception("Redis connection error")
-    with pytest.raises(Exception, match="Redis connection error"):
-        await redis_service.cache_quiz_result(test_data)
-
-    mock_redis_connect.side_effect = None
-
-    mock_redis.set.side_effect = Exception("Redis set error")
-    with pytest.raises(Exception, match="Redis set error"):
+    mock_redis.set.side_effect = Exception("Redis error")
+    redis_service = RedisService()
+    with pytest.raises(Exception, match="Redis error"):
         await redis_service.cache_quiz_result(test_data)
 
 
@@ -83,7 +70,6 @@ async def test_get_from_cache_success(
         assert result == [{"data": "value"}]
         mock_redis.keys.assert_called_once_with("key")
         mock_redis.mget.assert_called_once_with(["key"])
-        mock_redis.close.assert_called_once()
         mock_get_member.assert_called_once_with(id_=1, db=session)
         mock_get_company.assert_called_once_with(
             filters={"name": "Valid Company"}, db=session
@@ -303,7 +289,7 @@ async def test_admin_get_all_results_by_quiz_id_success(
 @pytest.mark.asyncio
 @patch("app.services.redis_service.RedisService.admin_get_cache_for_user")
 @patch("app.services.redis_service.csv.writer")
-@patch("app.services.redis_service.open", new_callable=MagicMock)
+@patch("app.services.redis_service.open")
 async def test_export_cached_results_for_one_user_to_csv(
     mock_open,
     mock_csv_writer,
@@ -372,8 +358,8 @@ async def test_export_cached_results_for_one_user_to_csv_no_cache(
 
 @pytest.mark.asyncio
 @patch("app.services.redis_service.RedisService.admin_get_all_results_by_quiz_id")
-@patch("app.services.redis_service.open", new_callable=MagicMock)
-@patch("app.services.redis_service.csv.writer", new_callable=MagicMock)
+@patch("app.services.redis_service.open")
+@patch("app.services.redis_service.csv.writer")
 async def test_export_all_cached_results_to_csv(
     mock_csv_writer,
     mock_open,

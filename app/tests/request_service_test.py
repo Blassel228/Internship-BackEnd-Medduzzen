@@ -1,11 +1,10 @@
 from unittest.mock import patch, MagicMock
+import pytest
 from fastapi import HTTPException
-
+from app.db.models.models import CompanyModel, RequestModel
 from app.schemas.schemas import RequestCreateInSchema, MemberCreateSchema
 from app.services.request_service import RequestService
-from app.db.models.models import CompanyModel, RequestModel
 from app.tests.conftest import get_db_fixture
-import pytest
 
 
 @pytest.fixture
@@ -113,13 +112,16 @@ async def test_owner_get_all_requests_errors(
 @patch("app.CRUD.member_crud.member_crud.get_one")
 @patch("app.CRUD.company_crud.company_crud.get_one")
 @patch("app.CRUD.request_crud.request_crud.get_one_by_filter")
+@patch("app.CRUD.request_crud.request_crud.get_one")
 async def test_send_request_success(
+    mock_request_get_one,
     mock_get_one_by_filter,
     mock_get_company,
     mock_get_member,
     request_service,
     get_db_fixture,
 ):
+    mock_request_get_one.return_value = None
     mock_get_member.return_value = None
     mock_get_company.return_value = CompanyModel(id=1, owner_id=2)
     mock_get_one_by_filter.return_value = None
@@ -144,7 +146,9 @@ async def test_send_request_success(
 @patch("app.CRUD.member_crud.member_crud.get_one")
 @patch("app.CRUD.company_crud.company_crud.get_one")
 @patch("app.CRUD.request_crud.request_crud.get_one_by_filter")
+@patch("app.CRUD.request_crud.request_crud.get_one")
 async def test_send_request_errors(
+    mock_request_get_one,
     mock_get_one_by_filter,
     mock_get_company,
     mock_get_member,
@@ -156,6 +160,16 @@ async def test_send_request_errors(
     request_payload = RequestCreateInSchema(
         id=1, company_id=1, request_text="I want to join"
     )
+    mock_request_get_one.return_value = RequestModel(id=1, request_text="Test", sender_id=1, company_id=1)
+    async for db_session in get_db_fixture:
+        with pytest.raises(HTTPException) as excinfo:
+            await request_service.send_request(
+                user_id=3, request=request_payload, db=db_session
+            )
+        assert excinfo.value.status_code == 409
+        assert excinfo.value.detail == "Request with such an id already exists"
+
+    mock_request_get_one.return_value = None
 
     mock_get_member.return_value = MagicMock()
     async for db_session in get_db_fixture:
@@ -228,7 +242,9 @@ async def test_accept_request_success(
         id=request_id, sender_id=request_sender_id
     )
     mock_get_user.return_value = MagicMock(id=request_sender_id)
-    mock_get_company.return_value = MagicMock(id=company_id, owner_id=user_id, company_name=company_name)
+    mock_get_company.return_value = MagicMock(
+        id=company_id, owner_id=user_id, company_name=company_name
+    )
 
     request_service = await request_service
     expected_member = MemberCreateSchema(id=request_sender_id, company_id=company_id)
@@ -267,7 +283,10 @@ async def test_accept_request_errors(
         mock_get_request.return_value = None
         with pytest.raises(HTTPException) as excinfo:
             await request_service.accept_request(
-                id_=request_id, user_id=user_id, db=db_session, company_name=company_name
+                id_=request_id,
+                user_id=user_id,
+                db=db_session,
+                company_name=company_name,
             )
         assert excinfo.value.status_code == 404
         assert excinfo.value.detail == "The request with such an id does not exist"
@@ -280,11 +299,16 @@ async def test_accept_request_errors(
             id=request_id, sender_id=request_sender_id
         )
         mock_get_user.return_value = MagicMock(id=request_sender_id)
-        mock_get_company.return_value = MagicMock(id=company_id, owner_id=user_id + 1, company_name=company_name)
+        mock_get_company.return_value = MagicMock(
+            id=company_id, owner_id=user_id + 1, company_name=company_name
+        )
 
         with pytest.raises(HTTPException) as excinfo:
             await request_service.accept_request(
-                id_=request_id, user_id=user_id, db=db_session, company_name=company_name
+                id_=request_id,
+                user_id=user_id,
+                db=db_session,
+                company_name=company_name,
             )
         assert excinfo.value.status_code == 403
         assert (
@@ -302,13 +326,13 @@ async def test_accept_request_errors(
 
         with pytest.raises(HTTPException) as excinfo:
             await request_service.accept_request(
-                id_=request_id, user_id=user_id, db=db_session, company_name=company_name
+                id_=request_id,
+                user_id=user_id,
+                db=db_session,
+                company_name=company_name,
             )
         assert excinfo.value.status_code == 404
-        assert (
-                excinfo.value.detail
-                == "There is no such a company"
-        )
+        assert excinfo.value.detail == "There is no such a company"
 
 
 @pytest.mark.asyncio
@@ -347,11 +371,16 @@ async def test_reject_request_success(
 @patch("app.CRUD.request_crud.request_crud.get_one")
 @patch("app.CRUD.company_crud.company_crud.get_one")
 @patch("app.CRUD.request_crud.request_crud.delete")
-async def test_reject_request_errors(mock_delete, mock_company_get_one, mock_request_get_one, request_service,
-                                     get_db_fixture):
+async def test_reject_request_errors(
+    mock_delete,
+    mock_company_get_one,
+    mock_request_get_one,
+    request_service,
+    get_db_fixture,
+):
     request_service = await request_service
 
-    async for session in  get_db_fixture:
+    async for session in get_db_fixture:
         mock_request_get_one.return_value = None
         with pytest.raises(HTTPException) as exc_info:
             await request_service.reject_request(id_=1, user_id=1, db=session)
@@ -373,7 +402,9 @@ async def test_reject_request_errors(mock_delete, mock_company_get_one, mock_req
         with pytest.raises(HTTPException) as exc_info:
             await request_service.reject_request(id_=1, user_id=1, db=session)
         assert exc_info.value.status_code == 403
-        assert exc_info.value.detail == "You do not own the company to reject the request"
+        assert (
+            exc_info.value.detail == "You do not own the company to reject the request"
+        )
 
         mock_delete.assert_not_awaited()
 

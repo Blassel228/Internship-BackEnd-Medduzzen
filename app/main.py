@@ -1,19 +1,20 @@
+import logging
 import uvicorn
 from fastapi import FastAPI
+
 from app.core.config import settings
-from app.routers.token_router import token_router
-from logging_config import LOGGING_CONFIG
-from app.routers.user_router import user_router
 from app.routers.company_router import company_router
 from app.routers.invitation_router import invitation_router
-from app.routers.request_router import request_router
 from app.routers.member_router import member_router
-from app.routers.quiz_router import quiz_router
+from app.routers.notification_router import notification_router
 from app.routers.option_router import option_router
 from app.routers.quiz_result_router import quiz_result_router
+from app.routers.quiz_router import quiz_router
 from app.routers.redis_router import redis_router
-from app.routers.notification_router import notification_router
-import logging
+from app.routers.request_router import request_router
+from app.routers.token_router import token_router
+from app.routers.user_router import user_router
+from logging_config import LOGGING_CONFIG
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)

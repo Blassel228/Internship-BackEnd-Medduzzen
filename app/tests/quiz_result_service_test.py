@@ -1,8 +1,6 @@
-from datetime import datetime
-from sqlalchemy.engine.row import Row
+from unittest.mock import patch
 import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
-from app.schemas.schemas import QuizResultCreateInSchema, QuizResultCreateSchema
+from fastapi import HTTPException
 from app.db.models.models import (
     QuizModel,
     QuestionModel,
@@ -12,8 +10,8 @@ from app.db.models.models import (
     QuizResultModel,
     UserModel,
 )
+from app.schemas.schemas import QuizResultCreateInSchema, QuizResultCreateSchema
 from app.services.quiz_result_service import QuizResultService
-from fastapi import HTTPException
 
 
 @pytest.fixture
@@ -409,102 +407,99 @@ async def test_pass_quiz_errors(
     quiz_result_service,
 ):
     quiz_data = QuizResultCreateInSchema(id=1, quiz_id=1, options_ids=[1, 2])
-    user_id = 1
     quiz_result_service = await quiz_result_service
 
-    mock_get_one_quiz_result.return_value = QuizResultModel(id=1)
     async for db in get_db_fixture:
+        # Test case: Result with such an id already exists
+        mock_get_one_quiz_result.return_value = QuizResultModel(id=1)
         with pytest.raises(HTTPException) as exc_info:
-            await quiz_result_service.pass_quiz(data=quiz_data, user_id=user_id, db=db)
+            await quiz_result_service.pass_quiz(data=quiz_data, user_id=1, db=db)
         assert exc_info.value.status_code == 403
         assert exc_info.value.detail == "Result with such an id already exists"
 
-    mock_get_one_quiz_result.return_value = None
+        # Reset mock
+        mock_get_one_quiz_result.return_value = None
 
-    mock_get_one_quiz.return_value = None
-    async for db in get_db_fixture:
+        # Test case: No such quiz
+        mock_get_one_quiz.return_value = None
         with pytest.raises(HTTPException) as exc_info:
-            await quiz_result_service.pass_quiz(data=quiz_data, user_id=user_id, db=db)
+            await quiz_result_service.pass_quiz(data=quiz_data, user_id=1, db=db)
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == "There is no such a quiz"
 
-    mock_get_one_quiz.return_value = QuizModel(
-        id=1,
-        company_id=1,
-        name="Test Quiz",
-        description="Test Description",
-        questions=[
-            QuestionModel(id=1, text="Question 1", options=[]),
-        ],
-    )
+        # Set up for the next test cases
+        mock_get_one_quiz.return_value = QuizModel(
+            id=1,
+            company_id=1,
+            name="Test Quiz",
+            description="Test Description",
+            questions=[
+                QuestionModel(id=1, text="Question 1", options=[]),
+            ],
+        )
+        mock_get_one_member.return_value = None
+        mock_get_one_company.return_value = CompanyModel(
+            id=1, owner_id=2, name="Test Company"  # Owner ID different from user_id
+        )
 
-    mock_get_one_member.return_value = None
-    mock_get_one_company.return_value = CompanyModel(
-        id=1, owner_id=1, name="Test Company"
-    )
-    async for db in get_db_fixture:
+        # Test case: User is not a member of the company
         with pytest.raises(HTTPException) as exc_info:
-            await quiz_result_service.pass_quiz(data=quiz_data, user_id=user_id, db=db)
+            await quiz_result_service.pass_quiz(data=quiz_data, user_id=1, db=db)
         assert exc_info.value.status_code == 403
-        assert exc_info.value.detail == "You are not a member of this company."
+        assert exc_info.value.detail == "You are not a member of that company"
 
-    mock_get_one_member.return_value = MemberModel(id=1, company_id=1, role="member")
-    mock_get_one_quiz.return_value = QuizModel(
-        id=1,
-        company_id=1,
-        name="Test Quiz",
-        description="Test Description",
-        questions=[
-            QuestionModel(id=1, text="Question 1", options=[]),
-        ],
-    )
-    async for db in get_db_fixture:
+        # Update member mock
+        mock_get_one_member.return_value = MemberModel(id=1, company_id=1, role="member")
+
+        # Test case: Invalid number of options provided
         with pytest.raises(HTTPException) as exc_info:
-            await quiz_result_service.pass_quiz(data=quiz_data, user_id=user_id, db=db)
+            await quiz_result_service.pass_quiz(data=quiz_data, user_id=1, db=db)
         assert exc_info.value.status_code == 403
         assert exc_info.value.detail == "Invalid number of options provided"
 
-    # Reset mock
-    mock_get_one_quiz.return_value = QuizModel(
-        id=1,
-        company_id=1,
-        name="Test Quiz",
-        description="Test Description",
-        questions=[
-            QuestionModel(
-                id=1,
-                text="Question 1",
-                options=[
-                    OptionModel(id=1, text="Option 1", is_correct=True, question_id=1),
-                ],
-            ),
-        ],
-    )
+        # Set up for the next test cases
+        mock_get_one_quiz.return_value = QuizModel(
+            id=1,
+            company_id=1,
+            name="Test Quiz",
+            description="Test Description",
+            questions=[
+                QuestionModel(
+                    id=1,
+                    text="Question 1",
+                    options=[
+                        OptionModel(id=1, text="Option 1", is_correct=True, question_id=1),
+                        OptionModel(id=3, text="Option 3", is_correct=True, question_id=1),
+                    ],
+                ),QuestionModel(
+                    id=2,
+                    text="Question 2",
+                    options=[
+                        OptionModel(id=4, text="Option 1", is_correct=True, question_id=2),
+                        OptionModel(id=5, text="Option 3", is_correct=True, question_id=2),
+                    ],
+                ),
+            ],
+        )
 
-    mock_get_one_option.side_effect = [
-        OptionModel(id=1, text="Option 1", is_correct=True, question_id=1),
-        None,
-    ]
-    async for db in get_db_fixture:
+        # Test case: No such option
+        mock_get_one_option.side_effect = [
+            OptionModel(id=1, text="Option 1", is_correct=True, question_id=1),
+            None
+        ]
         with pytest.raises(HTTPException) as exc_info:
-            await quiz_result_service.pass_quiz(data=quiz_data, user_id=user_id, db=db)
+            await quiz_result_service.pass_quiz(data=quiz_data, user_id=1, db=db)
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == "There is no such an option with id 2"
 
-    mock_get_one_option.side_effect = [
-        OptionModel(id=1, text="Option 1", is_correct=True, question_id=1)
-    ]
-    mock_get_one_option.return_value = OptionModel(
-        id=2, text="Option 2", is_correct=False, question_id=1
-    )
-    async for db in get_db_fixture:
+        mock_get_one_option.side_effect = [
+            OptionModel(id=1, text="Option 1", is_correct=True, question_id=1),
+            OptionModel(id=2, text="Option 2", is_correct=False, question_id=1),
+        ]
         with pytest.raises(HTTPException) as exc_info:
-            await quiz_result_service.pass_quiz(data=quiz_data, user_id=user_id, db=db)
+            await quiz_result_service.pass_quiz(data=quiz_data, user_id=1, db=db)
         assert exc_info.value.status_code == 403
-        assert (
-            exc_info.value.detail == "Option provided do not comply with the question"
-        )
-
+        assert exc_info.value.detail == "Option provided do not comply with the question"
 
 @pytest.mark.asyncio
 @patch("app.CRUD.company_crud.company_crud.get_one")

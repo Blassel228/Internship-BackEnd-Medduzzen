@@ -1,5 +1,5 @@
-import pytest
 from unittest.mock import patch, AsyncMock
+import pytest
 from fastapi import HTTPException
 from app.db.models.models import (
     CompanyModel,

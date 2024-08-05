@@ -1,9 +1,11 @@
+from fastapi import HTTPException
+from pydantic import BaseModel
+from sqlalchemy import update, select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import update, select
 from sqlalchemy.sql.operators import and_
+
 from app.db.models.models import CompanyModel
 from app.repositories.crud_repository import CrudRepository
-from fastapi import HTTPException
 from app.schemas.schemas import CompanyUpdateSchema
 
 
@@ -36,7 +38,32 @@ class CompanyCrud(CrudRepository):
             )
         return res
 
-    async def update(self, id_: int, user_id: int, db: AsyncSession, data: CompanyUpdateSchema):  # noqa
+    async def add(self, data: BaseModel, db: AsyncSession):
+        res = await self.get_one(id_=data.id, db=db)
+        if res is not None:
+            raise HTTPException(
+                status_code=409, detail="A company with such an id already exists"
+            )
+        res = await self.get_one_by_filter(filters={"name": data.name}, db=db)
+        if res is not None:
+            raise HTTPException(
+                status_code=409, detail="A company with such a name already exists"
+            )
+        stmt = insert(self.model).values(**data.model_dump())
+        await db.execute(stmt)
+        await db.commit()
+        res = await self.get_one(id_=data.id, db=db)
+        return res
+
+    async def update(
+        self, id_: int, user_id: int, db: AsyncSession, data: CompanyUpdateSchema
+    ):  # noqa
+        if "name" in data:
+            res = await self.get_one_by_filter(filters={"name": data.name}, db=db)
+            if res is not None:
+                raise HTTPException(
+                    status_code=409, detail="A company with such a name already exists"
+                )
         res = await self.get_one(db=db, id_=id_)
         if res is None:
             raise HTTPException(
@@ -45,7 +72,9 @@ class CompanyCrud(CrudRepository):
             )
         if user_id == res.owner_id:
             stmt = (
-                update(self.model).values(data.model_dump(exclude_none=True)).where(self.model.id == id_)
+                update(self.model)
+                .values(data.model_dump(exclude_none=True))
+                .where(self.model.id == id_)
             )
             await db.execute(stmt)
             await db.commit()

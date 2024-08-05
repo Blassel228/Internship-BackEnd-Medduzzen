@@ -1,22 +1,20 @@
-from dataclasses import asdict
 from datetime import datetime, timedelta
-from sqlalchemy import select, func, extract
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.operators import and_
 
-
 from app.CRUD.company_crud import company_crud
-from app.CRUD.quiz_result_crud import quiz_result_crud
-from app.CRUD.option_crud import option_crud
-from app.CRUD.user_crud import user_crud
-from app.CRUD.quiz_crud import quiz_crud
 from app.CRUD.member_crud import member_crud
+from app.CRUD.option_crud import option_crud
+from app.CRUD.quiz_crud import quiz_crud
+from app.CRUD.quiz_result_crud import quiz_result_crud
+from app.CRUD.user_crud import user_crud
 from app.db.models.models import QuizResultModel, QuizModel, UserModel
+from app.exceptions.custom_exceptions import check_user_permissions
 from app.schemas.schemas import (
     QuizResultCreateInSchema,
     QuizResultCreateSchema,
-    QuizResultUpdateSchema,
 )
 from app.services.redis_service import redis_service
 
@@ -33,23 +31,7 @@ class QuizResultService:
     ):
         member = await member_crud.get_one(id_=user_id, db=db)
         company = await company_crud.get_one(id_=company_id, db=db)
-        if company is None:
-            raise HTTPException(status_code=404, detail="There is no such a company")
-        if member is None:
-            if company.owner_id != user_id:
-                raise HTTPException(
-                    status_code=403, detail="You have no right to get all users results"
-                )
-        if member is not None:
-            if member.role != "admin":
-                raise HTTPException(
-                    status_code=403, detail="You do not have such rights"
-                )
-            if member.company_id != company.id:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of the company"
-                )
-
+        check_user_permissions(member=member, company=company, user_id=user_id)
         results = await quiz_result_crud.get_all_by_filter(
             db=db, filters={"company_id": company_id}
         )
@@ -60,23 +42,7 @@ class QuizResultService:
     ):
         member = await member_crud.get_one(id_=user_id, db=db)
         company = await company_crud.get_one(id_=company_id, db=db)
-        if company is None:
-            raise HTTPException(status_code=404, detail="There is no such a company")
-        if member is None:
-            if company.owner_id != user_id:
-                raise HTTPException(
-                    status_code=403, detail="You have no right to get all users results"
-                )
-        if member is not None:
-            if member.role != "admin":
-                raise HTTPException(
-                    status_code=403, detail="You do not have such rights"
-                )
-            if member.company_id != company.id:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of the company"
-                )
-
+        check_user_permissions(member=member, company=company, user_id=user_id)
         results = await quiz_result_crud.get_all_by_filter(
             db=db, filters={"user_id": id_}
         )
@@ -96,11 +62,8 @@ class QuizResultService:
             raise HTTPException(status_code=404, detail="There is no such a quiz")
         company = await company_crud.get_one(id_=quiz.company_id, db=db)
         member = await member_crud.get_one(id_=user_id, db=db)
-        if member is None:
-            if user_id != company.owner_id:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of this company."
-                )
+        if (member and member.company_id != company.id) or (member is None and user_id != company.owner_id):
+            raise HTTPException(status_code=403, detail="You are not a member of that company")
         if len(quiz.questions) != len(data.options_ids):
             raise HTTPException(
                 status_code=403, detail="Invalid number of options provided"
@@ -196,10 +159,14 @@ class QuizResultService:
         return avg_score
 
     async def get_average_score_for_all(self, db: AsyncSession, company_id: int):
-        stmt = select(
-            QuizResultModel.user_id,
-            func.avg(QuizResultModel.score).label("average_score"),
-        ).where(QuizResultModel.company_id == company_id)
+        stmt = (
+            select(
+                QuizResultModel.user_id,
+                func.avg(QuizResultModel.score).label("average_score"),
+            )
+            .where(QuizResultModel.company_id == company_id)
+            .group_by(QuizResultModel.user_id)
+        )
         result = await db.execute(stmt)
         return result.iterator
 
@@ -208,22 +175,7 @@ class QuizResultService:
     ):
         member = await member_crud.get_one(id_=user_id, db=db)
         company = await company_crud.get_one(id_=company_id, db=db)
-        if company is None:
-            raise HTTPException(status_code=404, detail="There is no such a company")
-        if member is None:
-            if company.owner_id != user_id:
-                raise HTTPException(
-                    status_code=403, detail="You have no right to get all users results"
-                )
-        if member is not None:
-            if member.role != "admin":
-                raise HTTPException(
-                    status_code=403, detail="You do not have such rights"
-                )
-            if member.company_id != company.id:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of the company"
-                )
+        check_user_permissions(member=member, company=company, user_id=user_id)
         stmt = (
             select(
                 QuizResultModel.user_id,
@@ -259,22 +211,7 @@ class QuizResultService:
     ):
         member = await member_crud.get_one(id_=user_id, db=db)
         company = await company_crud.get_one(id_=company_id, db=db)
-        if company is None:
-            raise HTTPException(status_code=404, detail="There is no such a company")
-        if member is None:
-            if company.owner_id != user_id:
-                raise HTTPException(
-                    status_code=403, detail="You have no right to get all users results"
-                )
-        if member is not None:
-            if member.role != "admin":
-                raise HTTPException(
-                    status_code=403, detail="You do not have such rights"
-                )
-            if member.company_id != company.id:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of the company"
-                )
+        check_user_permissions(member=member, company=company, user_id=user_id)
         stmt = (
             select(
                 QuizResultModel.user_id,
@@ -308,22 +245,7 @@ class QuizResultService:
     ):
         member = await member_crud.get_one(id_=user_id, db=db)
         company = await company_crud.get_one(id_=company_id, db=db)
-        if company is None:
-            raise HTTPException(status_code=404, detail="There is no such a company")
-        if member is None:
-            if company.owner_id != user_id:
-                raise HTTPException(
-                    status_code=403, detail="You have no right to get all users results"
-                )
-        if member is not None:
-            if member.role != "admin":
-                raise HTTPException(
-                    status_code=403, detail="You do not have such rights"
-                )
-            if member.company_id != company.id:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of the company"
-                )
+        check_user_permissions(member=member, company=company, user_id=user_id)
 
         one_week_ago = datetime.now() - timedelta(days=7)
 
@@ -359,22 +281,7 @@ class QuizResultService:
     ):
         member = await member_crud.get_one(id_=user_id, db=db)
         company = await company_crud.get_one(id_=company_id, db=db)
-        if company is None:
-            raise HTTPException(status_code=404, detail="There is no such a company")
-        if member is None:
-            if company.owner_id != user_id:
-                raise HTTPException(
-                    status_code=403, detail="You have no right to get all users results"
-                )
-        if member is not None:
-            if member.role != "admin":
-                raise HTTPException(
-                    status_code=403, detail="You do not have such rights"
-                )
-            if member.company_id != company.id:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of the company"
-                )
+        check_user_permissions(member=member, company=company, user_id=user_id)
 
         one_week_ago = datetime.now() - timedelta(days=7)
 
@@ -412,22 +319,7 @@ class QuizResultService:
     ):
         member = await member_crud.get_one(id_=user_id, db=db)
         company = await company_crud.get_one(id_=company_id, db=db)
-        if company is None:
-            raise HTTPException(status_code=404, detail="There is no such a company")
-        if member is None:
-            if company.owner_id != user_id:
-                raise HTTPException(
-                    status_code=403, detail="You have no right to get all users results"
-                )
-        if member is not None:
-            if member.role != "admin":
-                raise HTTPException(
-                    status_code=403, detail="You do not have such rights"
-                )
-            if member.company_id != company.id:
-                raise HTTPException(
-                    status_code=403, detail="You are not a member of the company"
-                )
+        check_user_permissions(member=member, company=company, user_id=user_id)
 
         stmt = (
             select(

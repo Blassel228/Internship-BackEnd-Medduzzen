@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.repositories.crud_repository import CrudRepository
 from app.db.models.models import QuizModel
+from app.repositories.crud_repository import CrudRepository
 
 
 class QuizCrud(CrudRepository):

@@ -1,11 +1,10 @@
+from unittest.mock import patch
 import pytest
-from unittest.mock import patch, AsyncMock
 from fastapi import HTTPException
-from app.services.invitation_service import InvitationService
-from app.schemas.schemas import InvitationCreateSchema, MemberCreateSchema
 from app.db.models.models import InvitationModel, CompanyModel, MemberModel
-from app.tests.conftest import get_db_fixture
+from app.schemas.schemas import InvitationCreateSchema, MemberCreateSchema
 from app.services.invitation_service import InvitationService
+from app.tests.conftest import get_db_fixture
 
 
 @pytest.fixture()
