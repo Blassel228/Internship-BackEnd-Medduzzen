@@ -5,7 +5,9 @@ from app.CRUD.member_crud import member_crud
 from app.CRUD.option_crud import option_crud
 from app.CRUD.question_crud import question_crud
 from app.CRUD.quiz_crud import quiz_crud
-from app.db.models.models import QuizModel, QuestionModel, OptionModel
+from app.db.models.option_model import OptionModel
+from app.db.models.question_model import QuestionModel
+from app.db.models.quiz_model import QuizModel
 from app.schemas.schemas import QuizCreateSchema
 from app.services.notification_service import notification_service
 
@@ -18,7 +20,7 @@ class QuizService:
         company_id: int,
         notification_text: str,
         quiz_data: QuizCreateSchema,
-    ):
+    ) -> QuizModel:
         try:
             quiz = await quiz_crud.get_one(id_=quiz_data.id, db=db)
             if quiz is not None:
@@ -138,6 +140,7 @@ class QuizService:
                 )
                 db.add(db_option)
         await db.commit()
+        quiz = await quiz_crud.get_one(id_=data.id, db=db)
         return quiz
 
 

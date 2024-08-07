@@ -1,7 +1,8 @@
 from unittest.mock import patch, MagicMock
 import pytest
 from fastapi import HTTPException
-from app.db.models.models import CompanyModel, RequestModel
+from app.db.models.request_model import RequestModel
+from app.db.models.company_model import CompanyModel
 from app.schemas.schemas import RequestCreateInSchema, MemberCreateSchema
 from app.services.request_service import RequestService
 from app.tests.conftest import get_db_fixture
@@ -160,7 +161,9 @@ async def test_send_request_errors(
     request_payload = RequestCreateInSchema(
         id=1, company_id=1, request_text="I want to join"
     )
-    mock_request_get_one.return_value = RequestModel(id=1, request_text="Test", sender_id=1, company_id=1)
+    mock_request_get_one.return_value = RequestModel(
+        id=1, request_text="Test", sender_id=1, company_id=1
+    )
     async for db_session in get_db_fixture:
         with pytest.raises(HTTPException) as excinfo:
             await request_service.send_request(

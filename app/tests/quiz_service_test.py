@@ -1,12 +1,10 @@
 from unittest.mock import patch, AsyncMock
 import pytest
 from fastapi import HTTPException
-from app.db.models.models import (
-    CompanyModel,
-    MemberModel,
-    QuizModel,
-    QuestionModel,
-)
+from app.db.models.question_model import QuestionModel
+from app.db.models.quiz_model import QuizModel
+from app.db.models.member_model import MemberModel
+from app.db.models.company_model import CompanyModel
 from app.schemas.schemas import (
     QuizCreateSchema,
     QuestionCreateSchema,
@@ -134,7 +132,7 @@ async def test_update_quiz_success(
         assert result.name == valid_quiz_data.name
         assert result.description == valid_quiz_data.description
 
-        mock_get_one_quiz.assert_called_once_with(id_=1, db=db)
+        assert mock_get_one_quiz.call_count == 2
         mock_get_one_company.assert_called_once_with(id_=1, db=db)
         mock_get_one_member.assert_called_once_with(id_=1, db=db)
         mock_get_all_questions_by_filter.assert_called_once_with(

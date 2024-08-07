@@ -2,7 +2,8 @@ import json
 from unittest.mock import patch, MagicMock, AsyncMock, call
 import pytest
 from fastapi import HTTPException
-from app.db.models.models import MemberModel, CompanyModel
+from app.db.models.member_model import MemberModel
+from app.db.models.company_model import CompanyModel
 from app.services.redis_service import RedisService
 
 

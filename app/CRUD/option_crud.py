@@ -1,4 +1,4 @@
-from app.db.models.models import OptionModel
+from app.db.models.option_model import OptionModel
 from app.repositories.crud_repository import CrudRepository
 
 

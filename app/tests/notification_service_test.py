@@ -2,14 +2,11 @@ import datetime
 from unittest.mock import patch, AsyncMock
 import pytest
 from fastapi import HTTPException
-
-from app.db.models.models import (
-    CompanyModel,
-    MemberModel,
-    NotificationModel,
-    QuizModel,
-    QuizResultModel,
-)
+from app.db.models.notification_model import NotificationModel
+from app.db.models.quiz_result_model import QuizResultModel
+from app.db.models.quiz_model import QuizModel
+from app.db.models.member_model import MemberModel
+from app.db.models.company_model import CompanyModel
 from app.schemas.schemas import NotificationCreateSchema
 from app.services.notification_service import NotificationService
 

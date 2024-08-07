@@ -2,7 +2,7 @@ from celery import Celery
 from app.core.config import settings
 from celery.schedules import crontab
 from app.services.notification_service import notification_service
-from app.db.models.models import session
+from app.db.base import session
 import asyncio
 
 app = Celery(
@@ -33,6 +33,6 @@ def pass_check_task():
 
 async def execute_pass_check():
     async with session() as async_session:
-        text = "Hello"
+        text = "Pass a new quiz please"
         result = await notification_service.pass_check(db=async_session, text=text)
         return result

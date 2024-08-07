@@ -7,7 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from app.core.config import settings
-from app.db.models.models import UserModel, session
+from app.db.base import session
+from app.db.models.user_model import UserModel
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token/login/")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -23,7 +24,7 @@ async def get_db():
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)], db: AsyncSession = Depends(get_db)
-):
+) -> UserModel:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -39,8 +40,8 @@ async def get_current_user(
     except JWTError as e:
         raise HTTPException(status_code=404, detail=f"JWT Error: {str(e)}")
 
-    res = await db.execute(select(UserModel).where(UserModel.email == email))
-    user = res.scalar()
+    stmt = select(UserModel).where(UserModel.email == email)
+    user = await db.scalar(stmt)
     if user is None:
         raise credentials_exception
 

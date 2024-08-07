@@ -1,4 +1,5 @@
 import datetime
+from app.db.models.notification_model import NotificationModel
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.CRUD.company_crud import company_crud
@@ -12,7 +13,7 @@ from app.schemas.schemas import NotificationCreateSchema
 class NotificationService:
     async def notify_users(
         self, quiz_id: int, company_id: int, notification_text: str, db: AsyncSession
-    ):
+    ) -> None:
         company = await company_crud.get_one(id_=company_id, db=db)
         quiz = await quiz_crud.get_one(id_=quiz_id, db=db)
         if quiz is None:
@@ -26,7 +27,9 @@ class NotificationService:
                 )
                 await notification_crud.add(data=notification, db=db)
 
-    async def mark_as_read(self, id_: int, user_id: int, db: AsyncSession):
+    async def mark_as_read(
+        self, id_: int, user_id: int, db: AsyncSession
+    ) -> NotificationModel:
         notification = await notification_crud.get_one(id_=id_, db=db)
         if notification is None:
             raise HTTPException(status_code=404, detail="Was not found")
@@ -39,7 +42,7 @@ class NotificationService:
         await db.refresh(notification)
         return notification
 
-    async def pass_check(self, text: str, db: AsyncSession):
+    async def pass_check(self, text: str, db: AsyncSession) -> list:
         members = await member_crud.get_all(db=db)
         quizzes = await quiz_crud.get_all(db=db)
         time_difference = datetime.timedelta()

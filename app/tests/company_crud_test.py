@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, AsyncMock
 import pytest
 from app.CRUD.company_crud import CompanyCrud
-from app.db.models.models import CompanyModel
+from app.db.models.company_model import CompanyModel
 
 
 @pytest.fixture

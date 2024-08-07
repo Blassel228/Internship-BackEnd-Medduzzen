@@ -1,7 +1,8 @@
 from unittest.mock import patch, AsyncMock
 import pytest
 from fastapi import HTTPException
-from app.db.models.models import CompanyModel, MemberModel
+from app.db.models.member_model import MemberModel
+from app.db.models.company_model import CompanyModel
 from app.services.member_service import MemberService
 from app.tests.conftest import get_db_fixture
 

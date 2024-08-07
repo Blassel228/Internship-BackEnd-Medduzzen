@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 import pytest
 from fastapi import HTTPException
 from app.CRUD.user_crud import UserCrud
-from app.db.models.models import UserModel
+from app.db.models.user_model import UserModel
 from app.schemas.schemas import UserCreateSchema, UserUpdateInSchema
 from app.tests.conftest import get_db_fixture
 from app.utils.deps import pwd_context

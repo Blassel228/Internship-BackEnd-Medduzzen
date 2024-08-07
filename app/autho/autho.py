@@ -1,17 +1,14 @@
 from datetime import timedelta, datetime
 from typing import Annotated
-
 from fastapi import Depends, HTTPException
-from fastapi import status
 from fastapi.security import HTTPBearer
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt as jose_jwt, JWTError
 from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.config import settings
-from app.db.models.models import UserModel
+from app.db.models.user_model import UserModel
 from app.utils.deps import get_db
 
 bearer = HTTPBearer()
@@ -29,7 +26,7 @@ async def login_get_token(
     )
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=401,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
@@ -78,10 +75,10 @@ async def get_auth0_user(
         email = payload.get("email")
         if email is None:
             raise HTTPException(
-                status_code=404, detail="Email not found in token payload"
+                status_code=422, detail="Email not found in token payload"
             )
     except JWTError as e:
-        raise HTTPException(status_code=404, detail=f"JWT Error: {str(e)}")
+        raise HTTPException(status_code=401, detail=f"JWT Error: {str(e)}")
 
     res = await db.execute(select(UserModel).where(UserModel.email == email))
     user = res.scalar()

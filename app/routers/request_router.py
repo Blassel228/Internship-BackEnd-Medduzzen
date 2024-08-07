@@ -57,7 +57,7 @@ async def accept_request(
     id_: int,
     company_name: str,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     """Accept a request."""
     return await request_service.accept_request(
@@ -67,11 +67,7 @@ async def accept_request(
 
 @request_router.delete("/reject")
 async def reject_request(
-    id_: int,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    id_: int, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
 ):
     """Reject a request."""
-    return await request_service.reject_request(
-        id_=id_, db=db, user_id=current_user.id
-    )
+    return await request_service.reject_request(id_=id_, db=db, user_id=current_user.id)

@@ -1,4 +1,4 @@
-from app.db.models.models import QuizResultModel
+from app.db.models.quiz_result_model import QuizResultModel
 from app.repositories.crud_repository import CrudRepository
 
 

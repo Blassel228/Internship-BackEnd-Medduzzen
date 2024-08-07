@@ -1,15 +1,13 @@
 from unittest.mock import patch
 import pytest
 from fastapi import HTTPException
-from app.db.models.models import (
-    QuizModel,
-    QuestionModel,
-    OptionModel,
-    CompanyModel,
-    MemberModel,
-    QuizResultModel,
-    UserModel,
-)
+from app.db.models.quiz_result_model import QuizResultModel
+from app.db.models.option_model import OptionModel
+from app.db.models.question_model import QuestionModel
+from app.db.models.quiz_model import QuizModel
+from app.db.models.member_model import MemberModel
+from app.db.models.company_model import CompanyModel
+from app.db.models.user_model import UserModel
 from app.schemas.schemas import QuizResultCreateInSchema, QuizResultCreateSchema
 from app.services.quiz_result_service import QuizResultService
 
@@ -449,7 +447,9 @@ async def test_pass_quiz_errors(
         assert exc_info.value.detail == "You are not a member of that company"
 
         # Update member mock
-        mock_get_one_member.return_value = MemberModel(id=1, company_id=1, role="member")
+        mock_get_one_member.return_value = MemberModel(
+            id=1, company_id=1, role="member"
+        )
 
         # Test case: Invalid number of options provided
         with pytest.raises(HTTPException) as exc_info:
@@ -468,15 +468,24 @@ async def test_pass_quiz_errors(
                     id=1,
                     text="Question 1",
                     options=[
-                        OptionModel(id=1, text="Option 1", is_correct=True, question_id=1),
-                        OptionModel(id=3, text="Option 3", is_correct=True, question_id=1),
+                        OptionModel(
+                            id=1, text="Option 1", is_correct=True, question_id=1
+                        ),
+                        OptionModel(
+                            id=3, text="Option 3", is_correct=True, question_id=1
+                        ),
                     ],
-                ),QuestionModel(
+                ),
+                QuestionModel(
                     id=2,
                     text="Question 2",
                     options=[
-                        OptionModel(id=4, text="Option 1", is_correct=True, question_id=2),
-                        OptionModel(id=5, text="Option 3", is_correct=True, question_id=2),
+                        OptionModel(
+                            id=4, text="Option 1", is_correct=True, question_id=2
+                        ),
+                        OptionModel(
+                            id=5, text="Option 3", is_correct=True, question_id=2
+                        ),
                     ],
                 ),
             ],
@@ -485,7 +494,7 @@ async def test_pass_quiz_errors(
         # Test case: No such option
         mock_get_one_option.side_effect = [
             OptionModel(id=1, text="Option 1", is_correct=True, question_id=1),
-            None
+            None,
         ]
         with pytest.raises(HTTPException) as exc_info:
             await quiz_result_service.pass_quiz(data=quiz_data, user_id=1, db=db)
@@ -499,7 +508,10 @@ async def test_pass_quiz_errors(
         with pytest.raises(HTTPException) as exc_info:
             await quiz_result_service.pass_quiz(data=quiz_data, user_id=1, db=db)
         assert exc_info.value.status_code == 403
-        assert exc_info.value.detail == "Option provided do not comply with the question"
+        assert (
+            exc_info.value.detail == "Option provided do not comply with the question"
+        )
+
 
 @pytest.mark.asyncio
 @patch("app.CRUD.company_crud.company_crud.get_one")

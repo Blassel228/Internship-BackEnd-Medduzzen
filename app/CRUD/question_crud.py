@@ -1,4 +1,4 @@
-from app.db.models.models import QuestionModel
+from app.db.models.question_model import QuestionModel
 from app.repositories.crud_repository import CrudRepository
 
 

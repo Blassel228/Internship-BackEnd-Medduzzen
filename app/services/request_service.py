@@ -1,3 +1,4 @@
+from typing import Sequence
 from fastapi import Depends
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -5,6 +6,8 @@ from app.CRUD.company_crud import company_crud
 from app.CRUD.member_crud import member_crud
 from app.CRUD.request_crud import request_crud
 from app.CRUD.user_crud import user_crud
+from app.db.models.member_model import MemberModel
+from app.db.models.request_model import RequestModel
 from app.schemas.schemas import MemberCreateSchema
 from app.schemas.schemas import RequestCreateSchema, RequestCreateInSchema
 from app.utils.deps import get_db
@@ -14,7 +17,7 @@ class RequestService:
 
     async def owner_get_all_requests(
         self, user_id: int, company_id: int, db: AsyncSession
-    ):
+    ) -> Sequence:
         company = await company_crud.get_one(id_=company_id, db=db)
         if company is None:
             raise HTTPException(status_code=404, detail="Such a company does not exist")
@@ -32,10 +35,12 @@ class RequestService:
         user_id: int,
         request: RequestCreateInSchema,
         db: AsyncSession = Depends(get_db),
-    ):
+    ) -> RequestCreateSchema:
         exist_request = await request_crud.get_one(id_=request.id, db=db)
         if exist_request is not None:
-            raise HTTPException(status_code=409, detail="Request with such an id already exists")
+            raise HTTPException(
+                status_code=409, detail="Request with such an id already exists"
+            )
         member = await member_crud.get_one(id_=user_id, db=db)
         if member is not None:
             raise HTTPException(status_code=403, detail="You are in a company already")
@@ -63,7 +68,7 @@ class RequestService:
         user_id: int,
         company_name: str,
         db: AsyncSession = Depends(get_db),
-    ):
+    ) -> MemberModel:
         request = await request_crud.get_one(id_=id_, db=db)
         if request is None:
             raise HTTPException(
@@ -89,7 +94,7 @@ class RequestService:
 
     async def reject_request(
         self, id_: int, user_id: int, db: AsyncSession = Depends(get_db)
-    ):
+    ) -> MemberModel:
         request = await request_crud.get_one(id_=id_, db=db)
         if request is None:
             raise HTTPException(
@@ -108,7 +113,7 @@ class RequestService:
 
     async def user_delete_its_request(
         self, id_: int, user_id: int, db: AsyncSession = Depends(get_db)
-    ):
+    ) -> RequestModel:
         request = await request_crud.get_one(id_=id_, db=db)
         if request is None:
             raise HTTPException(

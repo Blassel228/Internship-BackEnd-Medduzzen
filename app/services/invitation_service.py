@@ -1,3 +1,4 @@
+from typing import Sequence
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.CRUD.company_crud import company_crud
@@ -10,7 +11,7 @@ from app.schemas.schemas import InvitationCreateSchema, MemberCreateSchema
 class InvitationService:
     async def owner_get_all_invitations(
         self, user_id: int, company_id: int, db: AsyncSession
-    ):
+    ) -> Sequence:
         company = await company_crud.get_one(id_=company_id, db=db)
         if company is None:
             raise HTTPException(status_code=404, detail="Such a company does not exist")

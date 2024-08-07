@@ -1,7 +1,9 @@
 from unittest.mock import patch
 import pytest
 from fastapi import HTTPException
-from app.db.models.models import InvitationModel, CompanyModel, MemberModel
+from app.db.models.invitation_model import InvitationModel
+from app.db.models.member_model import MemberModel
+from app.db.models.company_model import CompanyModel
 from app.schemas.schemas import InvitationCreateSchema, MemberCreateSchema
 from app.services.invitation_service import InvitationService
 from app.tests.conftest import get_db_fixture
