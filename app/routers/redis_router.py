@@ -67,8 +67,3 @@ async def export_all_results_to_csv(
         user_id=current_user.id, quiz_id=quiz_id, company_name=company_name, db=db
     )
 
-
-@redis_router.delete("/cache")
-async def delete_cache(key: str):
-    """Delete a specific cache entry."""
-    return await redis_service.delete(key=key)

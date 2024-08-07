@@ -15,7 +15,7 @@ class RedisService:
     async def cache_quiz_result(self, data: dict) -> None:
         data_json = json.dumps(data)
         key = f"quiz_result:{data['quiz_id']}:{data['user_id']}:{data['company_id']}"
-        self.redis.set(key, data_json, ex=172800)
+        await self.redis.set(key, data_json, ex=172800)
 
     async def get_from_cache(
         self, key: str, user_id: int, db: AsyncSession, company_name: str
