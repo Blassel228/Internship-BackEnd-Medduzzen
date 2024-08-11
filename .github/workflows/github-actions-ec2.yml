@@ -1,4 +1,4 @@
-name: Push-to-EC2
+name: CI/CD Pipeline
 
 on:
   push:
@@ -8,32 +8,37 @@ on:
       - develop
 
 jobs:
-  test_and_deploy:
-    name: Test and Deploy to EC2
+  test-and-deploy:
+    name: Test, Lint, and Deploy
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout the code
+      - name: Checkout the repository
         uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: '3.12'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run linter (black)
-        run: black .
-
       - name: Run tests
-        run: pytest app/tests
+        run: |
+          pytest app/tests
+
+      - name: Run Black code formatter
+        run: |
+          black --check .
+
+      - name: Upload .env file to Server
+        run: |
+          scp -i ${{ secrets.EC2_SSH_KEY }} .env ec2-user@${{ secrets.HOST_DNS }}:/home/ec2-user/app/
 
       - name: Deploy to Server
-        if: success()
         uses: easingthemes/ssh-deploy@main
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
@@ -41,8 +46,7 @@ jobs:
           REMOTE_USER: ${{ secrets.USERNAME }}
           TARGET: /home/${{ secrets.USERNAME }}/app
 
-      - name: Executing remote ssh commands using ssh key
-        if: success()
+      - name: Execute remote SSH commands
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
