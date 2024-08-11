@@ -9,7 +9,7 @@ on:
 
 jobs:
   test-and-deploy:
-    name: Test, Lint, and Deploy
+    name: Test, Lint, Build, and Deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -26,17 +26,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Run Black code formatter
+        run: |
+          black .
+
       - name: Run tests
         run: |
           pytest app/tests
 
-      - name: Run Black code formatter
+      - name: Build Docker image
         run: |
-          black --check .
-
-      - name: Upload .env file to Server
-        run: |
-          scp -i ${{ secrets.EC2_SSH_KEY }} .env ec2-user@${{ secrets.HOST_DNS }}:/home/ec2-user/app/
+          docker build -t my-app-image .
 
       - name: Deploy to Server
         uses: easingthemes/ssh-deploy@main
@@ -46,15 +46,26 @@ jobs:
           REMOTE_USER: ${{ secrets.USERNAME }}
           TARGET: /home/${{ secrets.USERNAME }}/app
 
-      - name: Execute remote SSH commands
+      - name: Upload .env file to Server
+        run: |
+          scp -i ${{ secrets.EC2_SSH_KEY }} .env ec2-user@${{ secrets.HOST_DNS }}:/home/ec2-user/app/
+
+      - name: Build Docker image
+        run: |
+           docker build -t my-fastapi-app .
+
+      - name: Executing remote ssh commands using ssh key
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.HOST_DNS }}
-          username: ${{ secrets.USERNAME }}
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             sudo yum -y update
-            sudo yum -y install python3-pip
-            cd /home/${{ secrets.USERNAME }}/app
-            pip3 install -r requirements.txt
-            nohup uvicorn main:app --host 0.0.0.0 --port 80 &
+            sudo yum -y install docker
+            sudo docker stop $(sudo docker ps -q) || true
+            sudo docker rm $(sudo docker ps -a -q) || true
+            sudo docker pull my-fastapi-app
+            sudo systemctl start docker
+            sudo systemctl enable docker
+            sudo docker run --rm -p 8000:8000 my-fastapi-app
