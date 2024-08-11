@@ -2,11 +2,11 @@
 set -e
 
 echo "Starting Celery worker..."
-celery -A app.celery_app:app --broker redis://redis:6379/0 --result-backend redis://redis:6379/0 worker --pool=solo --loglevel=info -E &
+celery -A app.celery_app:app --broker redis://redis1.bdajto.ng.0001.use1.cache.amazonaws.com:6379/0 --result-backend redis://redis-bdajto.serverless.use1.cache.a>
 WORKER_PID=$!
 
 echo "Starting Celery beat..."
-celery -A app.celery_app:app --broker redis://redis:6379/0 --result-backend redis://redis:6379/0 beat --loglevel=info &
+celery -A app.celery_app:app --broker redis://redis1.bdajto.ng.0001.use1.cache.amazonaws.com:6379/0 --result-backend redis://redis-bdajto.serverless.use1.cache.a>
 BEAT_PID=$!
 
 echo "Starting Uvicorn server..."

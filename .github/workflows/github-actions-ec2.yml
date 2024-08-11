@@ -1,0 +1,56 @@
+name: Push-to-EC2
+
+on:
+  push:
+    branches:
+      - main
+      - BE-20-add-github-actions
+      - develop
+
+jobs:
+  test_and_deploy:
+    name: Test and Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run linter (black)
+        run: black .
+
+      - name: Run tests
+        run: pytest app/tests
+
+      - name: Deploy to Server
+        if: success()
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOST_DNS }}
+          REMOTE_USER: ${{ secrets.USERNAME }}
+          TARGET: /home/${{ secrets.USERNAME }}/app
+
+      - name: Executing remote ssh commands using ssh key
+        if: success()
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_DNS }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo yum -y update
+            sudo yum -y install python3-pip
+            cd /home/${{ secrets.USERNAME }}/app
+            pip3 install -r requirements.txt
+            nohup uvicorn main:app --host 0.0.0.0 --port 80 &

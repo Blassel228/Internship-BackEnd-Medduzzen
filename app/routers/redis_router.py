@@ -66,4 +66,3 @@ async def export_all_results_to_csv(
     return await redis_service.export_all_cached_results_to_csv(
         user_id=current_user.id, quiz_id=quiz_id, company_name=company_name, db=db
     )
-
