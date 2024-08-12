@@ -9,7 +9,7 @@ def read_root() -> Dict[str, str]:
     """
     Root endpoint to check if the API is working.
     """
-    return {"status_code": "200", "detail": "ok", "github-actions": "working"}
+    return {"status_code": "200", "detail": "ok", "github-actions": "working1"}
 
 
 @health_check_router.get("/health_check", response_model=Dict[str, str])
