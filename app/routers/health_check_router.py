@@ -17,4 +17,4 @@ def health_check() -> Dict[str, str]:
     """
     Health check endpoint to verify the health of the application.
     """
-    return {"status_code": "200", "detail": "ok", "result": "healthy", "github-actions": "working"}
+    return {"status_code": "200", "detail": "ok", "result": "healthy", "github-actions": "working1"}
