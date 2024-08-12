@@ -20,19 +20,21 @@ ARG DOMAIN
 ARG API_AUDIENCE
 ARG ISSUER
 
-ENV POSTGRES_HOST=$POSTGRES_HOST
-ENV POSTGRES_PORT=$POSTGRES_PORT
-ENV POSTGRES_DB=$POSTGRES_DB
-ENV POSTGRES_USER=$POSTGRES_USER
-ENV POSTGRES_PASSWORD=$POSTGRES_PASSWORD
-ENV REDIS_HOST=$REDIS_HOST
-ENV REDIS_PORT=$REDIS_PORT
-ENV REDIS_PASSWORD=$REDIS_PASSWORD
-ENV SECRET=$SECRET
-ENV ALGORITHM=$ALGORITHM
-ENV DOMAIN=$DOMAIN
-ENV API_AUDIENCE=$API_AUDIENCE
-ENV ISSUER=$ISSUER
+RUN echo "POSTGRES_HOST=${POSTGRES_HOST}" > /code/.env && \
+    echo "POSTGRES_PORT=${POSTGRES_PORT}" >> /code/.env && \
+    echo "POSTGRES_DB=${POSTGRES_DB}" >> /code/.env && \
+    echo "POSTGRES_USER=${POSTGRES_USER}" >> /code/.env && \
+    echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> /code/.env && \
+    echo "REDIS_HOST=${REDIS_HOST}" >> /code/.env && \
+    echo "REDIS_PORT=${REDIS_PORT}" >> /code/.env && \
+    echo "REDIS_PASSWORD=${REDIS_PASSWORD}" >> /code/.env && \
+    echo "SECRET=${SECRET}" >> /code/.env && \
+    echo "ALGORITHM=${ALGORITHM}" >> /code/.env && \
+    echo "DOMAIN=${DOMAIN}" >> /code/.env && \
+    echo "API_AUDIENCE=${API_AUDIENCE}" >> /code/.env && \
+    echo "ISSUER=${ISSUER}" >> /code/.env \
+
+RUN /code/generate_env.sh
 
 EXPOSE 8000 5555
 CMD ["/code/start_celery.sh"]

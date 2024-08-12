@@ -30,6 +30,14 @@ jobs:
         run: |
           black .
 
+      - name: Deploy to Server
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOST_DNS }}
+          REMOTE_USER: ${{ secrets.USERNAME }}
+          TARGET: /home/${{ secrets.USERNAME }}/app
+
       - name: Run tests
         run: |
           pytest app/tests
@@ -51,14 +59,6 @@ jobs:
             --build-arg API_AUDIENCE=${{ secrets.API_AUDIENCE }} \
             --build-arg ISSUER=${{ secrets.ISSUER }} \
             -t my-fastapi-app .
-
-      - name: Deploy to Server
-        uses: easingthemes/ssh-deploy@main
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.HOST_DNS }}
-          REMOTE_USER: ${{ secrets.USERNAME }}
-          TARGET: /home/${{ secrets.USERNAME }}/app
 
       - name: Executing remote ssh commands using ssh key
         uses: appleboy/ssh-action@master
