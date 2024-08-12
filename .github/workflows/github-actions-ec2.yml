@@ -42,10 +42,6 @@ jobs:
           REMOTE_USER: ${{ secrets.USERNAME }}
           TARGET: /home/${{ secrets.USERNAME }}/app
 
-      - name: Upload .env file to Server
-        run: |
-          scp -i ${{ secrets.EC2_SSH_KEY }} .env ec2-user@${{ secrets.HOST_DNS }}:/home/ec2-user/app/
-
       - name: Run tests
         run: |
           pytest app/tests
