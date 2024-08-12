@@ -34,14 +34,6 @@ jobs:
         run: |
           docker build -t my-app-image .
 
-      - name: Deploy to Server
-        uses: easingthemes/ssh-deploy@main
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.HOST_DNS }}
-          REMOTE_USER: ${{ secrets.USERNAME }}
-          TARGET: /home/${{ secrets.USERNAME }}/app
-
       - name: Run tests
         run: |
           pytest app/tests
