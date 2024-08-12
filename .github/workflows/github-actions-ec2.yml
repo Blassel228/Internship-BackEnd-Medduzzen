@@ -26,13 +26,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Load environment variables
+        run: |
+          echo "Loading environment variables from .env"
+          set -o allexport
+          source .env
+          set +o allexport
+
       - name: Run Black code formatter
         run: |
           black .
-
-      - name: Build Docker image
-        run: |
-          docker build -t my-app-image .
 
       - name: Run tests
         run: |
@@ -40,7 +43,29 @@ jobs:
 
       - name: Build Docker image
         run: |
-           docker build -t my-fastapi-app .
+          docker build \
+            --build-arg POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} \
+            --build-arg POSTGRES_PORT=${{ secrets.POSTGRES_PORT }} \
+            --build-arg POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+            --build-arg POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+            --build-arg POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            --build-arg REDIS_HOST=${{ secrets.REDIS_HOST }} \
+            --build-arg REDIS_PORT=${{ secrets.REDIS_PORT }} \
+            --build-arg REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
+            --build-arg SECRET=${{ secrets.SECRET }} \
+            --build-arg ALGORITHM=${{ secrets.ALGORITHM }} \
+            --build-arg DOMAIN=${{ secrets.DOMAIN }} \
+            --build-arg API_AUDIENCE=${{ secrets.API_AUDIENCE }} \
+            --build-arg ISSUER=${{ secrets.ISSUER }} \
+            -t my-fastapi-app .
+
+      - name: Deploy to Server
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOST_DNS }}
+          REMOTE_USER: ${{ secrets.USERNAME }}
+          TARGET: /home/${{ secrets.USERNAME }}/app
 
       - name: Executing remote ssh commands using ssh key
         uses: appleboy/ssh-action@master
