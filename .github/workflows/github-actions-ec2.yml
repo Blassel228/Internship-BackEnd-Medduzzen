@@ -49,6 +49,6 @@ jobs:
             echo "ISSUER=${{ secrets.ISSUER }}" >> $GITHUB_ENV
             echo "API_AUDIENCE=${{ secrets.API_AUDIENCE }}" >> $GITHUB_ENV
 
-      - name: Run tests
+      - name: Run Tests
         run: |
           pytest app/tests
