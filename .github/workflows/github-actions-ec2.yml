@@ -30,14 +30,6 @@ jobs:
         run: |
           black .
 
-      - name: Deploy to Server
-        uses: easingthemes/ssh-deploy@main
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.HOST_DNS }}
-          REMOTE_USER: ${{ secrets.USERNAME }}
-          TARGET: /home/${{ secrets.USERNAME }}/app
-
       - name: Run tests
         run: |
           pytest app/tests
@@ -59,19 +51,3 @@ jobs:
             --build-arg API_AUDIENCE=${{ secrets.API_AUDIENCE }} \
             --build-arg ISSUER=${{ secrets.ISSUER }} \
             -t my-fastapi-app .
-
-      - name: Executing remote ssh commands using ssh key
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_PUBLIC_IP }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            sudo yum -y update
-            sudo yum -y install docker
-            sudo docker stop $(sudo docker ps -q) || true
-            sudo docker rm $(sudo docker ps -a -q) || true
-            sudo docker pull my-fastapi-app
-            sudo systemctl start docker
-            sudo systemctl enable docker
-            sudo docker run --rm -p 8000:8000 my-fastapi-app
