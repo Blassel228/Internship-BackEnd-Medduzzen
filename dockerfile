@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3.11.5
 WORKDIR /code
 COPY ./requirements.txt /code/requirements.txt
 RUN pip install --upgrade -r /code/requirements.txt
@@ -32,9 +32,10 @@ RUN echo "POSTGRES_HOST=${POSTGRES_HOST}" > /code/.env && \
     echo "ALGORITHM=${ALGORITHM}" >> /code/.env && \
     echo "DOMAIN=${DOMAIN}" >> /code/.env && \
     echo "API_AUDIENCE=${API_AUDIENCE}" >> /code/.env && \
-    echo "ISSUER=${ISSUER}" >> /code/.env \
+    echo "ISSUER=${ISSUER}" >> /code/.env
 
-RUN /code/generate_env.sh
+#RUN generate_env.sh
 
 EXPOSE 8000 5555
-CMD ["/code/start_celery.sh"]
+
+CMD ["bash", "/code/start_celery.sh"]
