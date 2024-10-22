@@ -30,23 +30,22 @@ jobs:
         run: |
           black .
 
-      - name: Build Docker image
+      - name: Set environment variables
         run: |
-          docker build \
-            --build-arg POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} \
-            --build-arg POSTGRES_PORT=${{ secrets.POSTGRES_PORT }} \
-            --build-arg POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
-            --build-arg POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-            --build-arg POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-            --build-arg REDIS_HOST=${{ secrets.REDIS_HOST }} \
-            --build-arg REDIS_PORT=${{ secrets.REDIS_PORT }} \
-            --build-arg REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
-            --build-arg SECRET=${{ secrets.SECRET }} \
-            --build-arg ALGORITHM=${{ secrets.ALGORITHM }} \
-            --build-arg DOMAIN=${{ secrets.DOMAIN }} \
-            --build-arg API_AUDIENCE=${{ secrets.API_AUDIENCE }} \
-            --build-arg ISSUER=${{ secrets.ISSUER }} \
-            -t my-fastapi-app .
+            echo "UVICORN_HOST=${{ secrets.UVICORN_HOST }}" >> $GITHUB_ENV
+            echo "UVICORN_PORT=${{ secrets.UVICORN_PORT }}" >> $GITHUB_ENV
+            echo "***_HOST=${{ secrets.DB_HOST }}" >> $GITHUB_ENV
+            echo "***_PORT=${{ secrets.DB_PORT }}" >> $GITHUB_ENV
+            echo "***_DB=${{ secrets.DB_NAME }}" >> $GITHUB_ENV
+            echo "***_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
+            echo "***_USER=${{ secrets.DB_USER }}" >> $GITHUB_ENV
+            echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> $GITHUB_ENV
+            echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> $GITHUB_ENV
+            echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> $GITHUB_ENV
+            echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> $GITHUB_ENV
+            echo "SECRET=${{ secrets.SECRET }}" >> $GITHUB_ENV
+            echo "DOMAIN=${{ secrets.DOMAIN }}" >> $GITHUB_ENV
+            echo "API_AUDIENCE=${{ secrets.API_AUDIENCE }}" >> $GITHUB_ENV
 
       - name: Run tests
         run: |
