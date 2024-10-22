@@ -30,10 +30,6 @@ jobs:
         run: |
           black .
 
-      - name: Run tests
-        run: |
-          pytest app/tests
-
       - name: Build Docker image
         run: |
           docker build \
@@ -51,3 +47,7 @@ jobs:
             --build-arg API_AUDIENCE=${{ secrets.API_AUDIENCE }} \
             --build-arg ISSUER=${{ secrets.ISSUER }} \
             -t my-fastapi-app .
+
+      - name: Run tests
+        run: |
+          pytest app/tests
