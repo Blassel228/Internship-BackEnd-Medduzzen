@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v2
+        with:
+          ref: BE-20-add-github-actions
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -32,23 +34,30 @@ jobs:
 
       - name: Set environment variables
         run: |
-            echo "UVICORN_HOST=${{ secrets.UVICORN_HOST }}" >> $GITHUB_ENV
-            echo "UVICORN_PORT=${{ secrets.UVICORN_PORT }}" >> $GITHUB_ENV
-            echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> $GITHUB_ENV
-            echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> $GITHUB_ENV
-            echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> $GITHUB_ENV
-            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> $GITHUB_ENV
-            echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> $GITHUB_ENV
-            echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> $GITHUB_ENV
-            echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> $GITHUB_ENV
-            echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> $GITHUB_ENV
-            echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> $GITHUB_ENV
-            echo "SECRET=${{ secrets.SECRET }}" >> $GITHUB_ENV
-            echo "DOMAIN=${{ secrets.DOMAIN }}" >> $GITHUB_ENV
-            echo "API_AUDIENCE=${{ secrets.API_AUDIENCE }}" >> $GITHUB_ENV
-            echo "ISSUER=${{ secrets.ISSUER }}" >> $GITHUB_ENV
-            echo "API_AUDIENCE=${{ secrets.API_AUDIENCE }}" >> $GITHUB_ENV
+          echo "UVICORN_HOST=${{ secrets.UVICORN_HOST }}" >> $GITHUB_ENV
+          echo "UVICORN_PORT=${{ secrets.UVICORN_PORT }}" >> $GITHUB_ENV
+          echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> $GITHUB_ENV
+          echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> $GITHUB_ENV
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> $GITHUB_ENV
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> $GITHUB_ENV
+          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> $GITHUB_ENV
+          echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> $GITHUB_ENV
+          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> $GITHUB_ENV
+          echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> $GITHUB_ENV
+          echo "SECRET=${{ secrets.SECRET }}" >> $GITHUB_ENV
+          echo "DOMAIN=${{ secrets.DOMAIN }}" >> $GITHUB_ENV
+          echo "API_AUDIENCE=${{ secrets.API_AUDIENCE }}" >> $GITHUB_ENV
+          echo "ISSUER=${{ secrets.ISSUER }}" >> $GITHUB_ENV
 
       - name: Run Tests
         run: |
           pytest app/tests
+
+      - name: Copy Project to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} -r ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/fastapi
+
+      - name: Start Celery on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "bash /home/ec2-user/fastapi/start_celery.sh"
