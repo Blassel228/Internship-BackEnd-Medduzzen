@@ -86,14 +86,6 @@ jobs:
             EOT
           EOF
 
-      - name: Run start_application.sh file
-        run: |
-          ssh -o StrictHostKeyChecking=no -i "${{ runner.temp }}/ec2_key.pem" ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            cd /home/ec2-user/fastapi_test
-            chmod +x start_application.sh
-            ./start_application.sh
-          EOF
-
       - name: Cleanup SSH Key
         run: |
           rm "${{ runner.temp }}/ec2_key.pem"
