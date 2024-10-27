@@ -99,8 +99,20 @@ jobs:
           
             echo "Starting the new version of the application..."
             chmod +x start_application.sh
-            nohup ./start_application.sh > /dev/null 2>&1 &
+            nohup ./start_application.sh > app.log 2>&1 &
+
+            sleep 5
+
+            for i in {1..10}; do
+              if curl -s -o /dev/null http://localhost:8002/health; then
+                echo "Application is up!"
+                break
+              else
+                echo "Waiting for the application to start..."
+                sleep 2
+              fi
           
+            done
           EOF
 
       - name: Cleanup SSH Key
