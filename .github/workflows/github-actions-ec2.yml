@@ -62,12 +62,12 @@ jobs:
 
       - name: Copy Project to EC2 with rsync
         run: |
-          rsync -av --delete -e "ssh -o StrictHostKeyChecking=no -i '${{ runner.temp }}/ec2_key.pem'" ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/fastapi_test/
-          
+          rsync -av --delete -e "ssh -o StrictHostKeyChecking=no -i '${{ runner.temp }}/ec2_key.pem'" ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/fastapi/
+
       - name: Create .env file on EC2 instance
         run: |
           ssh -o StrictHostKeyChecking=no -i "${{ runner.temp }}/ec2_key.pem" ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            cat <<EOT > /home/ec2-user/fastapi_test/.env
+            cat <<EOT > /home/ec2-user/fastapi/.env
             UVICORN_HOST=${{ secrets.UVICORN_HOST }}
             UVICORN_PORT=${{ secrets.UVICORN_PORT }}
             POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
@@ -86,7 +86,14 @@ jobs:
             EOT
           EOF
 
+      - name: Run Application on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i "${{ runner.temp }}/ec2_key.pem" ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/ec2-user/fastapi_test
+            chmod +x start_application.sh
+            ./start_application.sh &
+          EOF
+
       - name: Cleanup SSH Key
         run: |
           rm "${{ runner.temp }}/ec2_key.pem"
-#check
