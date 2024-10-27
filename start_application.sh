@@ -1,21 +1,6 @@
 #!/bin/bash
 set -e
 
-function stop_services() {
-    echo "Stopping existing services..."
-    if [ -f pidfile ]; then
-        while IFS= read -r pid; do
-            if ps -p $pid > /dev/null; then
-                kill $pid
-                echo "Stopped process $pid"
-            else
-                echo "Process $pid not running"
-            fi
-        done < pidfile
-        rm pidfile
-    fi
-}
-
 echo "Starting Celery worker..."
 celery -A app.celery_app:app --broker redis://redis.bdajto.ng.0001.use1.cache.amazonaws.com:6379/0 --result-backend redis://redis.bdajto.ng.0001.use1.cache.amazonaws.com:6379/0 worker --pool=solo --loglevel=info -E &
 WORKER_PID=$!

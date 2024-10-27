@@ -99,9 +99,9 @@ jobs:
                 echo "No Uvicorn server is running on port 8002."
             fi
 
-            # Start the new version of the Uvicorn server
-            echo "Starting the new version of Uvicorn server..."
-            nohup uvicorn app.main:app --host 0.0.0.0 --port 8002 &
+            echo "Starting the new version of the application..."
+            chmod +x start_application.sh
+            nohup ./start_application.sh &
 
           EOF
 
