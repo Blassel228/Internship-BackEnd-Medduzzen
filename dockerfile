@@ -3,8 +3,8 @@ WORKDIR /code
 COPY ./requirements.txt /code/requirements.txt
 RUN pip install --upgrade -r /code/requirements.txt
 COPY . /code
-COPY start_celery.sh /code/start_celery.sh
-RUN chmod +x /code/start_celery.sh
+COPY start_application.sh /code/start_application.sh
+RUN chmod +x /code/start_application.sh
 
 ARG POSTGRES_HOST
 ARG POSTGRES_PORT
@@ -38,4 +38,4 @@ RUN echo "POSTGRES_HOST=${POSTGRES_HOST}" > /code/.env && \
 
 EXPOSE 8002 5555
 
-CMD ["bash", "/code/start_celery.sh"]
+CMD ["bash", "/code/start_application.sh"]
