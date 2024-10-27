@@ -61,7 +61,7 @@ jobs:
 
       - name: Copy Project to EC2
         run: |
-          scp -o StrictHostKeyChecking=no -i "${{ runner.temp }}/ec2_key.pem" -r ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          scp -o StrictHostKeyChecking=no -i "${{ runner.temp }}/ec2_key.pem" -r ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/
 
       - name: Start Celery on EC2
         run: |
