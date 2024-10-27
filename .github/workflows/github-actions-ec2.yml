@@ -90,19 +90,17 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i "${{ runner.temp }}/ec2_key.pem" ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/ec2-user/fastapi
-
+          
             # Check if Uvicorn is running and stop it if it is
             if sudo lsof -i :8002; then
                 echo "Stopping the existing Uvicorn server..."
                 sudo kill $(sudo lsof -t -i:8002) || true
-            else
-                echo "No Uvicorn server is running on port 8002."
             fi
-
+          
             echo "Starting the new version of the application..."
             chmod +x start_application.sh
-            nohup ./start_application.sh &
-
+            nohup ./start_application.sh > /dev/null 2>&1 &
+          
           EOF
 
       - name: Cleanup SSH Key
