@@ -40,5 +40,3 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app", host=settings.uvicorn_host, port=settings.uvicorn_port, reload=True
     )
-
-#test for github-actions
