@@ -36,6 +36,6 @@ RUN echo "POSTGRES_HOST=${POSTGRES_HOST}" > /code/.env && \
 
 #RUN generate_env.sh
 
-EXPOSE 8000 5555
+EXPOSE 8002 5555
 
 CMD ["bash", "/code/start_celery.sh"]
