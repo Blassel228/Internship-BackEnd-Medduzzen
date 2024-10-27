@@ -32,24 +32,6 @@ jobs:
         run: |
           black .
 
-      - name: Set environment variables
-        run: |
-          echo "UVICORN_HOST=${{ secrets.UVICORN_HOST }}" >> $GITHUB_ENV
-          echo "UVICORN_PORT=${{ secrets.UVICORN_PORT }}" >> $GITHUB_ENV
-          echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> $GITHUB_ENV
-          echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> $GITHUB_ENV
-          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> $GITHUB_ENV
-          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> $GITHUB_ENV
-          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> $GITHUB_ENV
-          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> $GITHUB_ENV
-          echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> $GITHUB_ENV
-          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> $GITHUB_ENV
-          echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> $GITHUB_ENV
-          echo "SECRET=${{ secrets.SECRET }}" >> $GITHUB_ENV
-          echo "DOMAIN=${{ secrets.DOMAIN }}" >> $GITHUB_ENV
-          echo "API_AUDIENCE=${{ secrets.API_AUDIENCE }}" >> $GITHUB_ENV
-          echo "ISSUER=${{ secrets.ISSUER }}" >> $GITHUB_ENV
-
       - name: Run Tests
         run: |
           pytest app/tests
@@ -62,6 +44,36 @@ jobs:
       - name: Copy Project to EC2 with rsync
         run: |
           rsync -av --delete -e "ssh -o StrictHostKeyChecking=no -i '${{ runner.temp }}/ec2_key.pem'" ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/fastapi_test/
+          
+      - name: Create .env file on EC2 instance
+        run: |
+          ssh -o StrictHostKeyChecking=no -i "${{ runner.temp }}/ec2_key.pem" ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cat <<EOT > /home/ec2-user/fastapi_test/.env
+            UVICORN_HOST=${{ secrets.UVICORN_HOST }}
+            UVICORN_PORT=${{ secrets.UVICORN_PORT }}
+            POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+            POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            REDIS_HOST=${{ secrets.REDIS_HOST }}
+            REDIS_PORT=${{ secrets.REDIS_PORT }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            SECRET=${{ secrets.SECRET }}
+            ALGORITHM=${{ secrets.ALGORITHM }}
+            DOMAIN=${{ secrets.DOMAIN }}
+            API_AUDIENCE=${{ secrets.API_AUDIENCE }}
+            ISSUER=${{ secrets.ISSUER }}
+            EOT
+          EOF
+
+      - name: Run start_application.sh file
+        run: |
+          ssh -o StrictHostKeyChecking=no -i "${{ runner.temp }}/ec2_key.pem" ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/ec2-user/fastapi_test
+            chmod +x start_application.sh
+            ./start_application.sh
+          EOF
 
       - name: Cleanup SSH Key
         run: |
