@@ -3,9 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main
-      - BE-20-add-github-actions
-      - develop
+      - '*'
 
 jobs:
   test-and-deploy:
