@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.CRUD.quiz_crud import quiz_crud
 from app.schemas.schemas import QuizCreateSchema
@@ -56,3 +57,10 @@ async def create_quiz(
 async def get_quiz(quiz_id: int, db: AsyncSession = Depends(get_db)):
     quiz = await quiz_crud.get_one(id_=quiz_id, db=db)
     return quiz
+
+
+@quiz_router.post("/import_excel_quiz")
+async def import_excel_quiz(file: UploadFile, company_id: int, user = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await quiz_service.parse_and_create_or_update_quiz_from_upload(file=file, db=db,  company_id=company_id, user_id=user.id)
+    encoded_result = jsonable_encoder(result)
+    return encoded_result

@@ -34,8 +34,6 @@ RUN echo "POSTGRES_HOST=${POSTGRES_HOST}" > /code/.env && \
     echo "API_AUDIENCE=${API_AUDIENCE}" >> /code/.env && \
     echo "ISSUER=${ISSUER}" >> /code/.env
 
-#RUN generate_env.sh
-
 EXPOSE 8002 5555
 
 CMD ["bash", "/code/start_application.sh"]

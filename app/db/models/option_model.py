@@ -13,4 +13,4 @@ class OptionModel(Base):
         ForeignKey("question.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     )
-    question = relationship("QuestionModel", back_populates="options")
+    question = relationship("QuestionModel", back_populates="options", lazy="selectin")
