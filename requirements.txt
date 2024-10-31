@@ -21,3 +21,7 @@ pycparser==2.22
 PyJWT==2.8.0
 starlette==0.37.2
 typing-extensions==4.12.2
+celery==5.4.0
+flower==2.0.1
+worker==2018.4.1
+logcc==2018.3.1

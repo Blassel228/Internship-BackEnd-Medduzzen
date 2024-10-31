@@ -1,8 +1,8 @@
+import logging
+from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from app.db.base import redis_connect
-from app.db.models.models import engine
-from fastapi import APIRouter
-import logging
+from app.db.base import engine
 
 db_check_router = APIRouter(tags=["db_check"], prefix="/db_check")
 

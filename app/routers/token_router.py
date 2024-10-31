@@ -1,18 +1,20 @@
-from app.autho.autho import login_get_token, oauth2_scheme
-from app.utils.deps import get_current_user, get_db
+from typing import Annotated
+from fastapi import APIRouter, Depends
 from fastapi.security import (
     OAuth2PasswordRequestForm,
     HTTPBearer,
     HTTPAuthorizationCredentials,
 )
-from typing import Annotated
-from fastapi import APIRouter, Depends
-from app.schemas.schemas import TokenSchema
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.autho.autho import get_auth0_user
+from app.autho.autho import login_get_token, oauth2_scheme
+from app.schemas.schemas import TokenSchema
+from app.utils.deps import get_current_user, get_db
 
 security = HTTPBearer()
 
-token_router = APIRouter(tags=["token"], prefix="/token")
+token_router = APIRouter(tags=["Token"], prefix="/token")
 
 
 @token_router.post("/login", response_model=TokenSchema)
@@ -36,3 +38,11 @@ async def read_current_user(
     db: AsyncSession = Depends(get_db),
 ):
     return await get_current_user(token=credentials.credentials, db=db)
+
+
+@token_router.post("/auth0")
+async def get_by_token(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    db: AsyncSession = Depends(get_db),
+):
+    return await get_auth0_user(token=credentials.credentials, db=db)
