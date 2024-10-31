@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class CrudRepository:
-    def __init__(self, model):
+    def __init__(self, model ):
         self.model = model
 
     async def get_all(self, db: AsyncSession):
@@ -37,7 +37,9 @@ class CrudRepository:
             update(self.model).values(**data.model_dump()).where(self.model.id == id_)
         )
         try:
-            await db.execute(stmt)
+            res = await db.execute(stmt)
+            if res.rowcount == 0:
+                return None
             await db.commit()
             res = await self.get_one(id_=id_, db=db)
             return res

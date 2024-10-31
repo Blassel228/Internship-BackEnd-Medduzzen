@@ -11,7 +11,6 @@ logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
 app = FastAPI()
 
-
 app.include_router(db_check_router)
 app.include_router(user_router)
 app.include_router(token_router)
@@ -25,6 +24,7 @@ def read_root():
 @app.get("/health_check")
 def health_check():
     return {"status_code": 200, "detail": "ok", "result": "healthy"}
+
 
 
 if __name__ == "__main__":

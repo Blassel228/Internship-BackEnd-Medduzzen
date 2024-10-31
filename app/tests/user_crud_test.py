@@ -7,11 +7,9 @@ from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi import HTTPException
 from app.utils.deps import pwd_context
 
-
 @pytest.fixture
 def user_crud():
     return UserCrud(UserModel)
-
 
 @pytest.mark.asyncio
 async def test_get_all(user_crud, get_db_fixture):
@@ -30,7 +28,6 @@ async def test_get_all(user_crud, get_db_fixture):
         assert users[0].username == "user1"
         assert users[1].username == "user2"
 
-
 @pytest.mark.asyncio
 async def test_get_one_success(user_crud, get_db_fixture):
     mock_user = UserModel(id=1, username="user1", email="user1@example.com")
@@ -40,7 +37,6 @@ async def test_get_one_success(user_crud, get_db_fixture):
         db_session.scalar.assert_called_once()
         assert user.id == 1
         assert user.username == "user1"
-
 
 @pytest.mark.asyncio
 async def test_get_one_not_found(user_crud, get_db_fixture):

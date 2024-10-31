@@ -1,5 +1,4 @@
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
 from app.main import app
 from app.core.config import settings
 
@@ -15,7 +14,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 async def main():
     return {"message": "Hello World"}
+
+
