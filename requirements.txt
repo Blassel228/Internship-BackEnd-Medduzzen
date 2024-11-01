@@ -29,4 +29,5 @@ pytest-asyncio==0.23.7
 psycopg2-binary==2.9.9
 pandas==2.2.3
 openpyxl==3.1.5
+ruff==0.7.1
 psycopg2==2.9.10
