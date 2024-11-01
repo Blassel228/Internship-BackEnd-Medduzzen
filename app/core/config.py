@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     api_audience: str
     issuer: str
 
-    cors_origins: list[str] = ["http://127.0.0.1:8000", "http://0.0.0.0:8000"]
+    cors_origins: list[str] = ["http://127.0.0.1:8000", "http://0.0.0.0:8000", "http://127.0.0.1:8001", "http://localhost:8001"]
 
     @property
     def postgres_url(self) -> str:

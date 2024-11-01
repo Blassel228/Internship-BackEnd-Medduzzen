@@ -13,7 +13,7 @@ async def get_user_all(
     current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """"Get notifications for current user"""
+    """ "Get notifications for current user"""
     return await notification_crud.get_all_by_filter(
         filters={"user_id": current_user.id}, db=db
     )

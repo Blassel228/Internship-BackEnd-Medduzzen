@@ -7,8 +7,8 @@ import asyncio
 
 app = Celery(
     "celery_app.py",
-    broker=f"redis://@localhost:{settings.redis_port}/0",
-    backend=f"redis://@localhost:{settings.redis_port}/0",
+    broker=f"redis://@{settings.redis_host}:{settings.redis_port}/0",
+    backend=f"redis://@{settings.redis_host}:{settings.redis_port}/0",
 )
 
 app.conf.timezone = "Europe/Kiev"

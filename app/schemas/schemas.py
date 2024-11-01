@@ -92,28 +92,44 @@ class OptionUpdateSchema(BaseModel):
     is_correct: bool
 
 
+class OptionGetSchema(BaseModel):
+    text: str
+    is_correct: bool
+
+
 class QuestionCreateSchema(BaseModel):
     text: str
     options: List[OptionCreateSchema]
 
 
 class QuestionUpdateSchema(BaseModel):
-    test: str
+    text: str
     quiz_id: int
 
 
+class QuestionGetSchema(BaseModel):
+    text: str
+    options: List[OptionGetSchema]
+
+
 class QuizCreateSchema(BaseModel):
-    id: int
+    id: Optional[int] = None
     name: str
     description: str
-    questions: List[QuestionCreateSchema]
+    questions: Optional[List[QuestionCreateSchema]] = None
+
+
+class QuizGetSchema(BaseModel):
+    id: Optional[int] = None
+    name: str
+    description: str
+    questions: Optional[List[QuestionGetSchema]] = None
 
 
 class QuizResultCreateInSchema(BaseModel):
     id: int
     quiz_id: int
-    options_ids: list
-
+    options_ids: list[int]
 
 class QuizResultCreateSchema(BaseModel):
     id: int

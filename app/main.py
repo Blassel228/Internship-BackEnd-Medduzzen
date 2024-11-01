@@ -14,12 +14,14 @@ from app.routers.request_router import request_router
 from app.routers.token_router import token_router
 from app.routers.user_router import user_router
 from app.routers.health_check_router import health_check_router
+from app.routers.db_check_router import db_check_router
 from logging_config import LOGGING_CONFIG
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
 app = FastAPI()
 
+app.include_router(db_check_router)
 app.include_router(health_check_router)
 app.include_router(user_router)
 app.include_router(token_router)

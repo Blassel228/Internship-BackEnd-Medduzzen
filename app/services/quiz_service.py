@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.CRUD.company_crud import company_crud
 from app.CRUD.member_crud import member_crud
@@ -8,8 +9,10 @@ from app.CRUD.quiz_crud import quiz_crud
 from app.db.models.option_model import OptionModel
 from app.db.models.question_model import QuestionModel
 from app.db.models.quiz_model import QuizModel
-from app.schemas.schemas import QuizCreateSchema
+from app.schemas.schemas import QuizCreateSchema, QuizGetSchema, QuestionGetSchema, OptionGetSchema
 from app.services.notification_service import notification_service
+import pandas as pd
+from app.exceptions.custom_exceptions import check_user_permissions
 
 
 class QuizService:
@@ -18,7 +21,7 @@ class QuizService:
         db: AsyncSession,
         user_id: int,
         company_id: int,
-        notification_text: str,
+        notification_text: str | None,
         quiz_data: QuizCreateSchema,
     ) -> QuizModel:
         try:
@@ -75,17 +78,19 @@ class QuizService:
                     await db.flush()
             await db.commit()
             await db.refresh(new_quiz)
-            await notification_service.notify_users(
-                company_id=company_id,
-                quiz_id=quiz_data.id,
-                notification_text=notification_text,
-                db=db,
-            )
+            if notification_text:
+                await notification_service.notify_users(
+                    company_id=company_id,
+                    quiz_id=quiz_data.id,
+                    notification_text=notification_text,
+                    db=db,
+                )
 
             return new_quiz
         except Exception as e:
             await db.rollback()
             raise e
+
 
     async def update(
         self, id_: int, db: AsyncSession, data: QuizCreateSchema, user_id: int
@@ -142,6 +147,103 @@ class QuizService:
         await db.commit()
         quiz = await quiz_crud.get_one(id_=data.id, db=db)
         return quiz
+
+    async def parse_and_create_or_update_quiz_from_upload(self,company_id: int, file: UploadFile,
+                                                          db: AsyncSession, user_id: int):
+        company = await company_crud.get_one(id_=company_id, db=db)
+        member = await member_crud.get_one(id_=user_id, db=db)
+        check_user_permissions(user_id=user_id, company=company, member=member)
+        excel_data = pd.read_excel(file.file, sheet_name=None)
+        quiz_df = excel_data["Quiz"]
+        questions_df = excel_data["Questions"]
+        options_df = excel_data["Options"]
+
+        quiz_name = quiz_df.at[0, "name"]
+        quiz_description = quiz_df.at[0, "description"]
+
+        quizzes = await quiz_crud.get_all(db=db)
+        new_questions = questions_df["question_text"].tolist()
+
+        found_matching_quiz = False
+        quiz_to_update = None
+
+        for quiz in quizzes:
+            if quiz.name == quiz_name:
+                found_matching_quiz = True
+                quiz_to_update = quiz
+                break
+
+        if found_matching_quiz:
+            quiz_to_update.description = quiz_description
+            await db.flush()
+
+            for question in quiz_to_update.questions:
+                if question.text in new_questions:
+                    question_options_df = options_df[options_df["question_text"] == question.text]
+                    existing_option_texts = {option.text for option in question.options}
+
+                    for _, option_row in question_options_df.iterrows():
+                        option_text = str(option_row["option_text"])
+                        is_correct = bool(option_row["is_correct"])
+
+                        if option_text not in existing_option_texts:
+                            new_option = OptionModel(text=option_text, is_correct=is_correct, question_id=question.id)
+                            db.add(new_option)
+                        else:
+                            for option in question.options:
+                                if option.text == option_text:
+                                    option.is_correct = is_correct
+
+                    for option in question.options:
+                        if option.text not in question_options_df["option_text"].values:
+                            await db.delete(option)
+
+        else:
+            quiz_to_update = QuizModel(
+                company_id=company_id,
+                name=quiz_name,
+                description=quiz_description,
+            )
+            db.add(quiz_to_update)
+
+            await db.flush()
+
+            for _, question_row in questions_df.iterrows():
+                question_text = question_row["question_text"]
+                new_question = QuestionModel(text=question_text, quiz_id=quiz_to_update.id)
+                db.add(new_question)
+
+                await db.flush()
+
+                question_options_df = options_df[options_df["question_text"] == question_text]
+                for _, option_row in question_options_df.iterrows():
+                    option_text = str(option_row["option_text"])
+                    is_correct = bool(option_row["is_correct"])
+                    new_option = OptionModel(text=option_text, is_correct=is_correct, question_id=new_question.id)
+                    db.add(new_option)
+
+        await db.commit()
+
+        quiz = await quiz_crud.get_one(id_=quiz_to_update.id, db=db)
+
+        quiz_response = QuizGetSchema(
+            id=quiz.id,
+            name=quiz.name,
+            description=quiz.description,
+            questions=[
+                QuestionGetSchema(
+                    text=question.text,
+                    options=[
+                        OptionGetSchema(
+                            text=option.text,
+                            is_correct=option.is_correct
+                        ) for option in question.options
+                    ]
+                ) for question in quiz.questions
+            ] if quiz.questions else None
+        )
+
+        return quiz_response
 
 
 quiz_service = QuizService()
