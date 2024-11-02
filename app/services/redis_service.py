@@ -81,7 +81,6 @@ class RedisService:
     async def export_cached_results_for_one_user_to_csv(
         self, user_id: int, id_: int, quiz_id: int, company_name: str, db: AsyncSession
     ):
-
         cache = await self.admin_get_cache_for_user(
             id_=id_, quiz_id=quiz_id, db=db, company_name=company_name, user_id=user_id
         )
@@ -108,7 +107,6 @@ class RedisService:
     async def export_all_cached_results_to_csv(
         self, user_id: int, quiz_id: int, company_name: str, db: AsyncSession
     ) -> list:
-
         cache = await self.admin_get_all_results_by_quiz_id(
             user_id=user_id, quiz_id=quiz_id, db=db, company_name=company_name
         )

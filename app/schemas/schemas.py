@@ -96,6 +96,9 @@ class OptionGetSchema(BaseModel):
     text: str
     is_correct: bool
 
+    class Config:
+        extra = "allow"
+
 
 class QuestionCreateSchema(BaseModel):
     text: str
@@ -111,6 +114,9 @@ class QuestionGetSchema(BaseModel):
     text: str
     options: List[OptionGetSchema]
 
+    class Config:
+        extra = "allow"
+
 
 class QuizCreateSchema(BaseModel):
     id: Optional[int] = None
@@ -125,11 +131,15 @@ class QuizGetSchema(BaseModel):
     description: str
     questions: Optional[List[QuestionGetSchema]] = None
 
+    class Config:
+        extra = "allow"
+
 
 class QuizResultCreateInSchema(BaseModel):
     id: int
     quiz_id: int
     options_ids: list[int]
+
 
 class QuizResultCreateSchema(BaseModel):
     id: int

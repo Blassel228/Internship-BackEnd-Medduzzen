@@ -12,7 +12,9 @@ async def redis_check():
     try:
         redis = await redis_connect()
         await redis.ping()
-        return JSONResponse(content={"status": "Redis is up - Restart"}, status_code=200)
+        return JSONResponse(
+            content={"status": "Redis is up - Restart"}, status_code=200
+        )
     except Exception as e:
         logging.error(e)
         return JSONResponse(

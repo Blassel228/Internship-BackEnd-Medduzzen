@@ -437,7 +437,9 @@ async def test_pass_quiz_errors(
         )
         mock_get_one_member.return_value = None
         mock_get_one_company.return_value = CompanyModel(
-            id=1, owner_id=2, name="Test Company"  # Owner ID different from user_id
+            id=1,
+            owner_id=2,
+            name="Test Company",  # Owner ID different from user_id
         )
 
         # Test case: User is not a member of the company
