@@ -5,6 +5,7 @@ from app.CRUD.quiz_crud import quiz_crud
 from app.schemas.schemas import QuizCreateSchema
 from app.services.quiz_service import quiz_service
 from app.utils.deps import get_db, get_current_user
+from fastapi.responses import FileResponse
 
 quiz_router = APIRouter(prefix="/quizzes", tags=["Quiz"])
 
@@ -60,7 +61,24 @@ async def get_quiz(quiz_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @quiz_router.post("/import_excel_quiz")
-async def import_excel_quiz(file: UploadFile, company_id: int, user = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await quiz_service.parse_and_create_or_update_quiz_from_upload(file=file, db=db,  company_id=company_id, user_id=user.id)
+async def import_excel_quiz(
+    file: UploadFile,
+    company_id: int,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await quiz_service.parse_and_create_or_update_quiz_from_upload(
+        file=file, db=db, company_id=company_id, user_id=user.id
+    )
     encoded_result = jsonable_encoder(result)
     return encoded_result
+
+
+@quiz_router.post("/{id_}/export")
+async def export_single_quiz_to_excel(id_: int, db: AsyncSession = Depends(get_db)):
+    file_path = await quiz_service.export_single_quiz_to_excel(id_=id_, db=db)
+    return FileResponse(
+        file_path,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename="quiz_export.xlsx"
+    )

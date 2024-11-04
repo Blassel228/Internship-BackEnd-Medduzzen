@@ -14,7 +14,6 @@ from app.utils.deps import get_db
 
 
 class RequestService:
-
     async def owner_get_all_requests(
         self, user_id: int, company_id: int, db: AsyncSession
     ) -> Sequence:

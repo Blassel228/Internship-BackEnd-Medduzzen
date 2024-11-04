@@ -13,6 +13,9 @@ class QuestionModel(Base):
         nullable=False,
     )
     options = relationship(
-        "OptionModel", back_populates="question", cascade="all, delete-orphan", lazy="selectin"
+        "OptionModel",
+        back_populates="question",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
     quizzes = relationship("QuizModel", back_populates="questions")

@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from pathlib import Path
 from app.CRUD.company_crud import company_crud
 from app.CRUD.member_crud import member_crud
 from app.CRUD.option_crud import option_crud
@@ -9,7 +10,12 @@ from app.CRUD.quiz_crud import quiz_crud
 from app.db.models.option_model import OptionModel
 from app.db.models.question_model import QuestionModel
 from app.db.models.quiz_model import QuizModel
-from app.schemas.schemas import QuizCreateSchema, QuizGetSchema, QuestionGetSchema, OptionGetSchema
+from app.schemas.schemas import (
+    QuizCreateSchema,
+    QuizGetSchema,
+    QuestionGetSchema,
+    OptionGetSchema,
+)
 from app.services.notification_service import notification_service
 import pandas as pd
 from app.exceptions.custom_exceptions import check_user_permissions
@@ -91,7 +97,6 @@ class QuizService:
             await db.rollback()
             raise e
 
-
     async def update(
         self, id_: int, db: AsyncSession, data: QuizCreateSchema, user_id: int
     ):
@@ -148,8 +153,9 @@ class QuizService:
         quiz = await quiz_crud.get_one(id_=data.id, db=db)
         return quiz
 
-    async def parse_and_create_or_update_quiz_from_upload(self,company_id: int, file: UploadFile,
-                                                          db: AsyncSession, user_id: int):
+    async def parse_and_create_or_update_quiz_from_upload(
+        self, company_id: int, file: UploadFile, db: AsyncSession, user_id: int
+    ):
         company = await company_crud.get_one(id_=company_id, db=db)
         member = await member_crud.get_one(id_=user_id, db=db)
         check_user_permissions(user_id=user_id, company=company, member=member)
@@ -179,7 +185,9 @@ class QuizService:
 
             for question in quiz_to_update.questions:
                 if question.text in new_questions:
-                    question_options_df = options_df[options_df["question_text"] == question.text]
+                    question_options_df = options_df[
+                        options_df["question_text"] == question.text
+                    ]
                     existing_option_texts = {option.text for option in question.options}
 
                     for _, option_row in question_options_df.iterrows():
@@ -187,7 +195,11 @@ class QuizService:
                         is_correct = bool(option_row["is_correct"])
 
                         if option_text not in existing_option_texts:
-                            new_option = OptionModel(text=option_text, is_correct=is_correct, question_id=question.id)
+                            new_option = OptionModel(
+                                text=option_text,
+                                is_correct=is_correct,
+                                question_id=question.id,
+                            )
                             db.add(new_option)
                         else:
                             for option in question.options:
@@ -210,16 +222,24 @@ class QuizService:
 
             for _, question_row in questions_df.iterrows():
                 question_text = question_row["question_text"]
-                new_question = QuestionModel(text=question_text, quiz_id=quiz_to_update.id)
+                new_question = QuestionModel(
+                    text=question_text, quiz_id=quiz_to_update.id
+                )
                 db.add(new_question)
 
                 await db.flush()
 
-                question_options_df = options_df[options_df["question_text"] == question_text]
+                question_options_df = options_df[
+                    options_df["question_text"] == question_text
+                ]
                 for _, option_row in question_options_df.iterrows():
                     option_text = str(option_row["option_text"])
                     is_correct = bool(option_row["is_correct"])
-                    new_option = OptionModel(text=option_text, is_correct=is_correct, question_id=new_question.id)
+                    new_option = OptionModel(
+                        text=option_text,
+                        is_correct=is_correct,
+                        question_id=new_question.id,
+                    )
                     db.add(new_option)
 
         await db.commit()
@@ -234,16 +254,68 @@ class QuizService:
                 QuestionGetSchema(
                     text=question.text,
                     options=[
-                        OptionGetSchema(
-                            text=option.text,
-                            is_correct=option.is_correct
-                        ) for option in question.options
-                    ]
-                ) for question in quiz.questions
-            ] if quiz.questions else None
+                        OptionGetSchema(text=option.text, is_correct=option.is_correct)
+                        for option in question.options
+                    ],
+                )
+                for question in quiz.questions
+            ]
+            if quiz.questions
+            else None,
         )
 
         return quiz_response
 
+    async def export_single_quiz_to_excel(self, db: AsyncSession, id_: int):
+        quiz = await quiz_crud.get_one(id_=id_, db=db)
+
+        if not quiz:
+            raise HTTPException(status_code=404, detail="Not Found")
+
+        quiz_data = QuizGetSchema(
+            quiz_id=quiz.id,
+            company_id=quiz.company_id,
+            name=quiz.name,
+            description=quiz.description,
+            pass_count=quiz.pass_count,
+            registration_date=quiz.registration_date,
+            questions=[
+                QuestionGetSchema(
+                    question_id=question.id,
+                    quiz_id=question.quiz_id,
+                    text=question.text,
+                    options=[
+                        OptionGetSchema(
+                            option_id=option.id,
+                            question_id=option.question_id,
+                            text=option.text,
+                            is_correct=option.is_correct,
+                        )
+                        for option in question.options
+                    ],
+                )
+                for question in quiz.questions
+            ],
+        )
+
+        # Convert data into DataFrames
+        quiz_data_dict = [quiz_data.dict(exclude={"questions"})]
+        question_data_dict = [q.dict(exclude={"options"}) for q in quiz_data.questions]
+        option_data_dict = [
+            o.dict() for question in quiz_data.questions for o in question.options
+        ]
+
+        quiz_df = pd.DataFrame(quiz_data_dict)
+        question_df = pd.DataFrame(question_data_dict)
+        option_df = pd.DataFrame(option_data_dict)
+
+
+        file_path = Path("quiz_export.xlsx")
+        with pd.ExcelWriter(file_path, engine="xlsxwriter") as writer:
+            quiz_df.to_excel(writer, sheet_name="Quiz", index=False)
+            question_df.to_excel(writer, sheet_name="Questions", index=False)
+            option_df.to_excel(writer, sheet_name="Options", index=False)
+
+        return file_path
 
 quiz_service = QuizService()

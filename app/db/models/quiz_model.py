@@ -16,7 +16,7 @@ class QuizModel(Base):
         "QuestionModel",
         back_populates="quizzes",
         cascade="all, delete-orphan",
-        lazy="selectin"
+        lazy="selectin",
     )
     pass_count = Column(Integer, default=0)
     registration_date = Column(DateTime, default=datetime.utcnow)
