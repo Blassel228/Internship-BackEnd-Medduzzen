@@ -10,8 +10,15 @@ from app.schemas.schemas import CompanyUpdateSchema
 
 
 class CompanyCrud(CrudRepository):
-    async def get_all_visible(self, db: AsyncSession) -> Sequence:
-        stmt = select(self.model).where(self.model.visible == True)
+    async def get_all_visible(
+        self, db: AsyncSession, skip: int = 0, limit: int = 10
+    ) -> Sequence:
+        stmt = (
+            select(self.model)
+            .where(self.model.visible == True)
+            .offset(skip)
+            .limit(limit)
+        )
         res = await db.scalars(stmt)
         return res.all()
 
@@ -36,24 +43,19 @@ class CompanyCrud(CrudRepository):
                 status_code=403,
                 detail="You do not own this company",
             )
-        res = self.delete(db=db, id_=id_)
+        res = await self.delete(db=db, id_=id_)
         return res
 
     async def add(self, data: BaseModel, db: AsyncSession) -> CompanyModel:
-        res = await self.get_one(id_=data.id, db=db)
-        if res:
-            raise HTTPException(
-                status_code=409, detail="Company with this ID already exists"
-            )
         res = await self.get_one_by_filter(filters={"name": data.name}, db=db)
         if res:
             raise HTTPException(
                 status_code=409, detail="Company with this name already exists"
             )
-        stmt = insert(self.model).values(**data.model_dump())
+        stmt = insert(self.model).values(**data.model_dump(exclude_none=True))
         await db.execute(stmt)
         await db.commit()
-        res = await self.get_one(id_=data.id, db=db)
+        res = await self.get_one_by_filter(filters={"name": data.name}, db=db)
         return res
 
     async def update(

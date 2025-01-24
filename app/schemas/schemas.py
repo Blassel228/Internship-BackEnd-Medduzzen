@@ -2,8 +2,13 @@ from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 
 
+class UserGetSchema(BaseModel):
+    username: str
+    email: EmailStr
+
+
 class UserCreateSchema(BaseModel):
-    id: int
+    id: Optional[int] = None
     username: str
     password: str
     email: EmailStr
@@ -34,7 +39,7 @@ class TokenSchema(BaseModel):
 
 
 class CompanyCreateSchema(BaseModel):
-    id: int
+    id: Optional[int] = None
     name: str
     description: str
     visible: bool
@@ -42,7 +47,7 @@ class CompanyCreateSchema(BaseModel):
 
 
 class CompanyCreateInSchema(BaseModel):
-    id: int
+    id: Optional[int] = None
     name: str
     description: str
     visible: bool
@@ -57,8 +62,14 @@ class CompanyUpdateVisibility(BaseModel):
     visible: bool
 
 
+class InvitationGetSchema(BaseModel):
+    company_id: int
+    recipient_id: int
+    invitation_text: str
+
+
 class InvitationCreateSchema(BaseModel):
-    id: int
+    id: Optional[int] = None
     company_id: int
     recipient_id: int
     invitation_text: str
@@ -70,13 +81,19 @@ class MemberCreateSchema(BaseModel):
 
 
 class RequestCreateInSchema(BaseModel):
-    id: int
+    id: Optional[int] = None
     company_id: int
     request_text: str
 
 
 class RequestCreateSchema(BaseModel):
-    id: int
+    id: Optional[int] = None
+    company_id: int
+    sender_id: int
+    request_text: str
+
+
+class RequestGetSchema(BaseModel):
     company_id: int
     sender_id: int
     request_text: str
@@ -158,3 +175,32 @@ class NotificationCreateSchema(BaseModel):
     user_id: int
     quiz_id: int
     text: str
+
+
+class LoginData(BaseModel):
+    username: str
+    password: str
+
+
+class CreateImage(BaseModel):
+    user_id: int
+    file_name: str
+    image_data: bytes
+
+
+class ImageResponseByte(BaseModel):
+    file_name: str
+    image_data: Optional[bytes] = None
+
+    class Config:
+        from_attributes = True
+        exclude_none = True
+
+
+class ImageResponse(BaseModel):
+    file_name: str
+    image_data: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+        exclude_none = True

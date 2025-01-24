@@ -8,7 +8,7 @@ from app.CRUD.request_crud import request_crud
 from app.CRUD.user_crud import user_crud
 from app.db.models.member_model import MemberModel
 from app.db.models.request_model import RequestModel
-from app.schemas.schemas import MemberCreateSchema
+from app.schemas.schemas import MemberCreateSchema, RequestGetSchema
 from app.schemas.schemas import RequestCreateSchema, RequestCreateInSchema
 from app.utils.deps import get_db
 
@@ -34,12 +34,13 @@ class RequestService:
         user_id: int,
         request: RequestCreateInSchema,
         db: AsyncSession = Depends(get_db),
-    ) -> RequestCreateSchema:
-        exist_request = await request_crud.get_one(id_=request.id, db=db)
-        if exist_request is not None:
-            raise HTTPException(
-                status_code=409, detail="Request with such an id already exists"
-            )
+    ) -> RequestGetSchema:
+        if request.id:
+            exist_request = await request_crud.get_one(id_=request.id, db=db)
+            if exist_request is not None:
+                raise HTTPException(
+                    status_code=409, detail="Request with such an id already exists"
+                )
         member = await member_crud.get_one(id_=user_id, db=db)
         if member is not None:
             raise HTTPException(status_code=403, detail="You are in a company already")
@@ -57,15 +58,17 @@ class RequestService:
             raise HTTPException(
                 status_code=409, detail="You have already sent request to that company"
             )
-        request = RequestCreateSchema(**request.model_dump(), sender_id=user_id)
+        request = RequestCreateSchema(
+            **request.model_dump(exclude_none=True), sender_id=user_id
+        )
         await request_crud.add(data=request, db=db)
+        request = RequestGetSchema(**request.model_dump(exclude_none=True))
         return request
 
     async def accept_request(
         self,
         id_: int,
         user_id: int,
-        company_name: str,
         db: AsyncSession = Depends(get_db),
     ) -> MemberModel:
         request = await request_crud.get_one(id_=id_, db=db)
@@ -74,17 +77,14 @@ class RequestService:
                 status_code=404, detail="The request with such an id does not exist"
             )
         user = await user_crud.get_one(id_=request.sender_id, db=db)
-        company = await company_crud.get_one_by_filter(
-            db=db, filters={"name": company_name}
-        )
-        if company is None:
-            raise HTTPException(status_code=404, detail="There is no such a company")
+        company = await company_crud.get_one(db=db, id_=request.company_id)
 
         if company.owner_id != user_id:
             raise HTTPException(
                 status_code=403,
                 detail="You can not accept the request as you are not the owner",
             )
+
         await request_crud.delete(id_=request.id, db=db)
         member = await member_crud.add(
             db=db, data=MemberCreateSchema(company_id=company.id, id=user.id)

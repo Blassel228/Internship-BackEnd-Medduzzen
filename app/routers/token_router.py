@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.security import (
@@ -11,6 +12,10 @@ from app.autho.autho import get_auth0_user
 from app.autho.autho import login_get_token, oauth2_scheme
 from app.schemas.schemas import TokenSchema
 from app.utils.deps import get_current_user, get_db
+from logging_config import LOGGING_CONFIG
+
+logging.config.dictConfig(LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 security = HTTPBearer()
 
@@ -37,6 +42,8 @@ async def read_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
     db: AsyncSession = Depends(get_db),
 ):
+    credentials_log = credentials
+    logger.log(msg=credentials_log, level=1)
     return await get_current_user(token=credentials.credentials, db=db)
 
 
