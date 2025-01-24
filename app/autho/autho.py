@@ -1,8 +1,9 @@
+import logging
 from datetime import timedelta, datetime
 from typing import Annotated
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import HTTPBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from jose import jwt as jose_jwt, JWTError
 from passlib.context import CryptContext
 from sqlalchemy import select
@@ -10,6 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.db.models.user_model import UserModel
 from app.utils.deps import get_db
+from logging_config import LOGGING_CONFIG
+
+logging.config.dictConfig(LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 bearer = HTTPBearer()
 
@@ -30,11 +35,12 @@ async def login_get_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=20)
+    access_token_expires = timedelta(hours=5)
     access_token = create_access_token(
         data={"username": user.username, "id": user.id, "email": user.email},
         expires_delta=access_token_expires,
     )
+    logger.log(msg=access_token, level=1)
     return {"access_token": access_token, "token_type": "bearer"}
 
 

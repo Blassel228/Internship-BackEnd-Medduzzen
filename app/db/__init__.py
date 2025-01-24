@@ -8,3 +8,4 @@ from app.db.models.invitation_model import InvitationModel
 from app.db.models.option_model import OptionModel
 from app.db.models.question_model import QuestionModel
 from app.db.models.quiz_model import QuizModel
+from app.db.models.image_model import ImageModel

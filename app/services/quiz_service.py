@@ -250,18 +250,22 @@ class QuizService:
             id=quiz.id,
             name=quiz.name,
             description=quiz.description,
-            questions=[
-                QuestionGetSchema(
-                    text=question.text,
-                    options=[
-                        OptionGetSchema(text=option.text, is_correct=option.is_correct)
-                        for option in question.options
-                    ],
-                )
-                for question in quiz.questions
-            ]
-            if quiz.questions
-            else None,
+            questions=(
+                [
+                    QuestionGetSchema(
+                        text=question.text,
+                        options=[
+                            OptionGetSchema(
+                                text=option.text, is_correct=option.is_correct
+                            )
+                            for option in question.options
+                        ],
+                    )
+                    for question in quiz.questions
+                ]
+                if quiz.questions
+                else None
+            ),
         )
 
         return quiz_response
@@ -309,7 +313,6 @@ class QuizService:
         question_df = pd.DataFrame(question_data_dict)
         option_df = pd.DataFrame(option_data_dict)
 
-
         file_path = Path("quiz_export.xlsx")
         with pd.ExcelWriter(file_path, engine="xlsxwriter") as writer:
             quiz_df.to_excel(writer, sheet_name="Quiz", index=False)
@@ -317,5 +320,6 @@ class QuizService:
             option_df.to_excel(writer, sheet_name="Options", index=False)
 
         return file_path
+
 
 quiz_service = QuizService()

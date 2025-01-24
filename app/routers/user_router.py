@@ -19,6 +19,13 @@ async def self_update(
     return await user_service.self_update(id_=current_user.id, data=data, db=db)
 
 
+@user_router.get("/check")
+async def check_user_exists(
+    email: str = None, username: str = None, db: AsyncSession = Depends(get_db)
+):
+    return await user_service.check_user_exists(email=email, username=username, db=db)
+
+
 @user_router.delete("/self_delete")
 async def self_delete(
     current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)

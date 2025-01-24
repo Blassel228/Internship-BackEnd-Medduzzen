@@ -5,7 +5,11 @@ from app.CRUD.company_crud import company_crud
 from app.CRUD.invitation_crud import invitation_crud
 from app.CRUD.member_crud import member_crud
 from app.CRUD.user_crud import user_crud
-from app.schemas.schemas import InvitationCreateSchema, MemberCreateSchema
+from app.schemas.schemas import (
+    InvitationCreateSchema,
+    MemberCreateSchema,
+    InvitationGetSchema,
+)
 
 
 class InvitationService:
@@ -33,11 +37,12 @@ class InvitationService:
             raise HTTPException(
                 status_code=404, detail="A user with such an id does not exist"
             )
-        invitation = await invitation_crud.get_one(id_=data.id, db=db)
-        if invitation is not None:
-            raise HTTPException(
-                status_code=409, detail="Such an invitation already exists"
-            )
+        if data.id:
+            invitation = await invitation_crud.get_one(id_=data.id, db=db)
+            if invitation:
+                raise HTTPException(
+                    status_code=409, detail="Such an invitation already exists"
+                )
         if data.recipient_id == user_id:
             raise HTTPException(
                 status_code=403, detail="Cannot send invitation to itself"
@@ -55,7 +60,8 @@ class InvitationService:
             raise HTTPException(
                 status_code=400, detail="The user is in your company already"
             )
-        invitation = await invitation_crud.add(data=data, db=db)
+        await invitation_crud.add(data=data, db=db)
+        invitation = InvitationGetSchema(**data.model_dump(exclude_none=True))
         return invitation
 
     async def delete_invitation_by_owner(

@@ -1,5 +1,6 @@
 import logging
 import uvicorn
+from middleware import add_cors_middleware
 from fastapi import FastAPI
 from app.core.config import settings
 from app.routers.company_router import company_router
@@ -13,6 +14,7 @@ from app.routers.redis_router import redis_router
 from app.routers.request_router import request_router
 from app.routers.token_router import token_router
 from app.routers.user_router import user_router
+from app.routers.image_router import image_router
 from app.routers.health_check_router import health_check_router
 from app.routers.db_check_router import db_check_router
 from logging_config import LOGGING_CONFIG
@@ -34,7 +36,9 @@ app.include_router(option_router)
 app.include_router(quiz_result_router)
 app.include_router(redis_router)
 app.include_router(notification_router)
+app.include_router(image_router)
 
+add_cors_middleware(app)
 
 if __name__ == "__main__":
     uvicorn.run(
