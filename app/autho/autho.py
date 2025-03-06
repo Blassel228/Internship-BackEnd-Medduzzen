@@ -2,7 +2,7 @@ import logging
 from datetime import timedelta, datetime
 from typing import Annotated
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt as jose_jwt, JWTError
 from passlib.context import CryptContext
@@ -16,15 +16,13 @@ from logging_config import LOGGING_CONFIG
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
 
-bearer = HTTPBearer()
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token/login/")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 async def login_get_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: AsyncSession = Depends(get_db),
+        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+        db: AsyncSession = Depends(get_db),
 ):
     user = await authenticate_user(
         username=form_data.username, password=form_data.password, db=db
@@ -35,13 +33,18 @@ async def login_get_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(hours=5)
+    access_token_expires = timedelta(minutes=15)
     access_token = create_access_token(
         data={"username": user.username, "id": user.id, "email": user.email},
         expires_delta=access_token_expires,
     )
+
+    refresh_token = create_refresh_token(
+        data={"username": user.username, "id": user.id, "email": user.email}
+    )
+
     logger.log(msg=access_token, level=1)
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
 async def authenticate_user(password: str, username: str, db: AsyncSession):
@@ -65,6 +68,39 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
         to_encode, settings.secret, algorithm=settings.algorithm
     )
     return encoded_jwt
+
+def create_refresh_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(days=7)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jose_jwt.encode(
+        to_encode, settings.secret, algorithm=settings.algorithm
+    )
+    return encoded_jwt
+
+
+async def refresh_token(
+        refresh_token: str = Depends(oauth2_scheme),
+):
+    try:
+        payload = jose_jwt.decode(
+            refresh_token,
+            settings.secret,
+            algorithms=[settings.algorithm],
+        )
+        username = payload.get("username")
+        if username is None:
+            raise HTTPException(status_code=422, detail="Invalid refresh token")
+
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=f"JWT Error: {str(e)}")
+
+    new_access_token = create_access_token(
+        data={"username": username},
+        expires_delta=timedelta(hours=5),
+    )
+
+    return {"access_token": new_access_token, "token_type": "bearer"}
 
 
 async def get_auth0_user(

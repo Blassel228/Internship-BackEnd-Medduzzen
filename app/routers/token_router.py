@@ -9,8 +9,8 @@ from fastapi.security import (
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.autho.autho import get_auth0_user
-from app.autho.autho import login_get_token, oauth2_scheme
-from app.schemas.schemas import TokenSchema
+from app.autho.autho import login_get_token, oauth2_scheme, refresh_token
+from app.schemas.schemas import TokenSchema, RefreshTokenSchema
 from app.utils.deps import get_current_user, get_db
 from logging_config import LOGGING_CONFIG
 
@@ -53,3 +53,10 @@ async def get_by_token(
     db: AsyncSession = Depends(get_db),
 ):
     return await get_auth0_user(token=credentials.credentials, db=db)
+
+
+@token_router.post("/refresh")
+async def refresh(
+    refresh_data: RefreshTokenSchema
+):
+    return await refresh_token(refresh_token=refresh_data.token)

@@ -2,6 +2,10 @@ from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 
 
+class RefreshTokenSchema(BaseModel):
+    token: str
+
+
 class UserGetSchema(BaseModel):
     username: str
     email: EmailStr
@@ -35,6 +39,7 @@ class UserSelfUpdateSchema(BaseModel):
 
 class TokenSchema(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
 
 
